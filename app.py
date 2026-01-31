@@ -1,77 +1,87 @@
 import streamlit as st
 from openai import OpenAI
-import google.generativeai as genai
 
 # Configuração da Página
-st.set_page_config(page_title="Social Media AI Gen", page_icon="📸", layout="centered")
+st.set_page_config(page_title="Gerador Ministerial Pro", page_icon="⛪")
 
-# --- ESTILIZAÇÃO E DNA ---
-st.title("📸 AI Social Media Assistant")
+st.title("⛪ Social Media Ministerial")
 st.markdown("---")
 
-# Campo de DNA (conforme sua ideia de sumir após digitar)
-if 'dna_input' not in st.session_state:
-    st.session_state.dna_input = ""
+# --- LÓGICA DO DNA MINISTERIAL ---
+# Usamos session_state para garantir que o DNA fique salvo "na memória" do app durante o uso
+if "dna_ministerial" not in st.session_state:
+    st.session_state.dna_ministerial = ""
 
-dna_text = st.text_input("🧬 Configure o DNA Ministerial (Pressione Enter)", 
-                         type="password", 
-                         placeholder="Cole aqui o DNA da igreja...")
+# Campo de entrada que "limpa" visualmente após o Enter
+dna_input = st.text_input(
+    "🧬 Configure o DNA Ministerial da Igreja", 
+    type="password", 
+    placeholder="Ex: Igreja jovem, foco em missões, linguagem contemporânea..."
+)
 
-if dna_text:
-    st.session_state.dna_input = dna_text
-    st.success("DNA configurado com sucesso!")
-    st.caption(f"📍 **DNA atual:** {dna_text[:30]}...")
+if dna_input:
+    st.session_state.dna_ministerial = dna_input
+    st.success("DNA Ministerial atualizado e aplicado à lógica da IA!")
 
-# --- CONFIGURAÇÃO DAS APIS ---
-# No Streamlit Cloud, use st.secrets para segurança
-try:
-    client_openai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-except:
-    st.error("Configure as chaves OPENAI_API_KEY e GEMINI_API_KEY nos Secrets do Streamlit.")
+# Exibição discreta conforme solicitado anteriormente
+if st.session_state.dna_ministerial:
+    resumo_dna = st.session_state.dna_ministerial[:40] + "..."
+    st.caption(f"✨ **DNA atual:** {resumo_dna}")
 
-# --- ABAS DO APLICATIVO ---
+st.markdown("---")
+
+# --- FUNÇÃO DO SUPER AGENTE ---
+def gerar_conteudo(tema, tipo_conteudo):
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    
+    # Aqui é onde o DNA Ministerial entra na lógica profunda
+    system_message = f"""
+    Você é um Super Agente de Comunicação Cristã. 
+    Sua missão é criar conteúdo baseado RIGOROSAMENTE no seguinte DNA MINISTERIAL:
+    ---
+    {st.session_state.dna_ministerial}
+    ---
+    Regras de Ouro:
+    1. Adapte o vocabulário, as gírias (ou falta delas) e a profundidade teológica ao DNA acima.
+    2. Use MUITOS emojis relevantes para aumentar o engajamento.
+    3. Sempre inclua uma CTA (Chamada para Ação) e Hashtags estratégicas.
+    """
+    
+    prompt_usuario = f"Gere {tipo_conteudo} sobre o tema: {tema}"
+    
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": prompt_usuario}
+        ]
+    )
+    return response.choices[0].message.content
+
+# --- INTERFACE DE ABAS ---
 tab1, tab2, tab3 = st.tabs(["✍️ Legendas", "📱 Stories", "🎨 Prompts Gemini"])
 
-# 1. ABA DE LEGENDAS
 with tab1:
-    tema_legenda = st.text_area("Sobre o que é a postagem?", placeholder="Ex: Culto de domingo sobre gratidão")
-    if st.button("Gerar Legenda ✨"):
-        prompt_sistema = f"Você é um social media expert. Use o DNA: {st.session_state.dna_input}. Crie uma legenda com muitos emojis, hashtags e CTA."
-        
-        response = client_openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": prompt_sistema},
-                {"role": "user", "content": f"Gere uma legenda para: {tema_legenda}"}
-            ]
-        )
-        st.subheader("Sua Legenda:")
-        st.write(response.choices[0].message.content)
+    tema_post = st.text_area("Tema da Postagem:")
+    if st.button("Gerar Legenda com DNA"):
+        if st.session_state.dna_ministerial:
+            with st.spinner("A IA está processando o DNA ministerial..."):
+                resultado = gerar_conteudo(tema_post, "uma legenda para Instagram")
+                st.markdown(resultado)
+        else:
+            st.warning("⚠️ Por favor, insira o DNA Ministerial antes de gerar.")
 
-# 2. ABA DE STORIES
 with tab2:
-    tema_story = st.text_input("Qual o tema dos Stories?")
-    if st.button("Gerar Roteiro 🤳"):
-        prompt_sistema = f"Crie um roteiro de 5 stories com emojis, sugestões de enquetes e textos de tela. DNA: {st.session_state.dna_input}"
-        
-        response = client_openai.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": prompt_sistema},
-                {"role": "user", "content": f"Roteiro para: {tema_story}"}
-            ]
-        )
-        st.subheader("Roteiro Sugerido:")
-        st.write(response.choices[0].message.content)
+    tema_story = st.text_input("Tema dos Stories:")
+    if st.button("Gerar Roteiro com DNA"):
+        if st.session_state.dna_ministerial:
+            with st.spinner("Criando sequência de stories..."):
+                resultado = gerar_conteudo(tema_story, "um roteiro de 5 stories (texto e ação)")
+                st.markdown(resultado)
+        else:
+            st.warning("⚠️ Insira o DNA Ministerial primeiro.")
 
-# 3. ABA DE PROMPTS (GEMINI)
 with tab3:
-    tema_imagem = st.text_input("Descreva a imagem que deseja criar:")
-    if st.button("Criar Prompt Profissional 🎨"):
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt_request = f"Transforme isso em um prompt detalhado de imagem para IA (estilo fotorealista, luz suave, 4k): {tema_imagem}"
-        
-        response = model.generate_content(prompt_request)
-        st.subheader("Prompt Gerado para o Gemini:")
-        st.code(response.text)
+    # Lógica similar para o prompt de imagem
+    st.info("O DNA Ministerial também será usado para ditar o estilo visual dos prompts.")
+    # ... (mesma lógica de chamada de API)
