@@ -1,87 +1,85 @@
 import streamlit as st
 from openai import OpenAI
+import google.generativeai as genai
 
 # Configuração da Página
-st.set_page_config(page_title="Gerador Ministerial Pro", page_icon="⛪")
+st.set_page_config(page_title="Gerador de Conteúdo AI", page_icon="📈")
 
-st.title("⛪ Social Media Ministerial")
-st.markdown("---")
+st.title("🚀 Social Media Business Generator")
+st.subheader("Crie conteúdos profissionais para qualquer nicho")
 
-# --- LÓGICA DO DNA MINISTERIAL ---
-# Usamos session_state para garantir que o DNA fique salvo "na memória" do app durante o uso
-if "dna_ministerial" not in st.session_state:
-    st.session_state.dna_ministerial = ""
+# --- LÓGICA DO DNA DA MARCA (MULTI-NICHO) ---
+if "dna_marca" not in st.session_state:
+    st.session_state.dna_marca = ""
 
-# Campo de entrada que "limpa" visualmente após o Enter
+# O campo limpa ao dar enter, mas o resumo aparece embaixo
 dna_input = st.text_input(
-    "🧬 Configure o DNA Ministerial da Igreja", 
+    "🎯 Defina o DNA do Negócio (Nicho, tom de voz, público-alvo)", 
     type="password", 
-    placeholder="Ex: Igreja jovem, foco em missões, linguagem contemporânea..."
+    placeholder="Ex: Clínica de estética, tom elegante, público feminino classe A..."
 )
 
 if dna_input:
-    st.session_state.dna_ministerial = dna_input
-    st.success("DNA Ministerial atualizado e aplicado à lógica da IA!")
+    st.session_state.dna_marca = dna_input
+    st.success("Configuração de marca salva!")
 
-# Exibição discreta conforme solicitado anteriormente
-if st.session_state.dna_ministerial:
-    resumo_dna = st.session_state.dna_ministerial[:40] + "..."
-    st.caption(f"✨ **DNA atual:** {resumo_dna}")
+# Exibição discreta do resumo
+if st.session_state.dna_marca:
+    st.info(f"📌 **DNA atual:** {st.session_state.dna_marca[:50]}...")
 
 st.markdown("---")
 
 # --- FUNÇÃO DO SUPER AGENTE ---
-def gerar_conteudo(tema, tipo_conteudo):
+def gerar_conteudo_openai(tema, tipo):
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     
-    # Aqui é onde o DNA Ministerial entra na lógica profunda
-    system_message = f"""
-    Você é um Super Agente de Comunicação Cristã. 
-    Sua missão é criar conteúdo baseado RIGOROSAMENTE no seguinte DNA MINISTERIAL:
-    ---
-    {st.session_state.dna_ministerial}
-    ---
-    Regras de Ouro:
-    1. Adapte o vocabulário, as gírias (ou falta delas) e a profundidade teológica ao DNA acima.
-    2. Use MUITOS emojis relevantes para aumentar o engajamento.
-    3. Sempre inclua uma CTA (Chamada para Ação) e Hashtags estratégicas.
-    """
+    system_prompt = f"""
+    Você é um estrategista de marketing digital de alto nível.
+    O perfil do cliente que você está atendendo é: {st.session_state.dna_marca}.
     
-    prompt_usuario = f"Gere {tipo_conteudo} sobre o tema: {tema}"
+    Regras:
+    1. Use emojis para aumentar a retenção e o engajamento.
+    2. Garanta que o tom de voz combine exatamente com o DNA fornecido.
+    3. Inclua sempre uma CTA (Chamada para Ação) persuasiva.
+    4. Adicione um bloco de hashtags estratégicas ao final.
+    """
     
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": prompt_usuario}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Gere {tipo} sobre o tema: {tema}"}
         ]
     )
     return response.choices[0].message.content
 
-# --- INTERFACE DE ABAS ---
+# --- ABAS DO APP ---
 tab1, tab2, tab3 = st.tabs(["✍️ Legendas", "📱 Stories", "🎨 Prompts Gemini"])
 
 with tab1:
-    tema_post = st.text_area("Tema da Postagem:")
-    if st.button("Gerar Legenda com DNA"):
-        if st.session_state.dna_ministerial:
-            with st.spinner("A IA está processando o DNA ministerial..."):
-                resultado = gerar_conteudo(tema_post, "uma legenda para Instagram")
-                st.markdown(resultado)
+    tema_post = st.text_area("Sobre o que será o post?")
+    if st.button("Gerar Legenda Completa"):
+        if st.session_state.dna_marca:
+            res = gerar_conteudo_openai(tema_post, "uma legenda de alta conversão")
+            st.write(res)
         else:
-            st.warning("⚠️ Por favor, insira o DNA Ministerial antes de gerar.")
+            st.warning("Defina o DNA da marca primeiro.")
 
 with tab2:
-    tema_story = st.text_input("Tema dos Stories:")
-    if st.button("Gerar Roteiro com DNA"):
-        if st.session_state.dna_ministerial:
-            with st.spinner("Criando sequência de stories..."):
-                resultado = gerar_conteudo(tema_story, "um roteiro de 5 stories (texto e ação)")
-                st.markdown(resultado)
+    tema_story = st.text_input("Objetivo dos Stories (Ex: Venda de produto X)")
+    if st.button("Gerar Sequência de Stories"):
+        if st.session_state.dna_marca:
+            res = gerar_conteudo_openai(tema_story, "um roteiro de 5 stories (texto e ideia visual)")
+            st.write(res)
         else:
-            st.warning("⚠️ Insira o DNA Ministerial primeiro.")
+            st.warning("Defina o DNA da marca primeiro.")
 
 with tab3:
-    # Lógica similar para o prompt de imagem
-    st.info("O DNA Ministerial também será usado para ditar o estilo visual dos prompts.")
-    # ... (mesma lógica de chamada de API)
+    tema_img = st.text_input("O que a imagem deve mostrar?")
+    if st.button("Gerar Prompt para Gemini"):
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt_refinado = f"Crie um prompt detalhado de imagem para IA baseado no DNA {st.session_state.dna_marca}. O tema é: {tema_img}"
+        response = model.generate_content(prompt_refinado)
+        st.code(response.text)
