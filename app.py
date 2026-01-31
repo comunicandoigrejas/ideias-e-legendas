@@ -3,107 +3,101 @@ from openai import OpenAI
 import google.generativeai as genai
 
 # Configuração da Página
-st.set_page_config(page_title="Social Media Pro", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Social Media Master AI", page_icon="📈", layout="wide")
 
-# Título Principal
 st.title("🚀 Social Media Content Master")
-st.markdown("Gerador inteligente de Legendas, Stories e Prompts.")
 
-# --- 🧬 CONFIGURAÇÃO DO DNA DA MARCA ---
+# --- 🧬 CONFIGURAÇÃO DO DNA DA MARCA (VISÍVEL) ---
 if "dna_marca" not in st.session_state:
     st.session_state.dna_marca = ""
 
+# Expander para não ocupar espaço desnecessário após configurar
 with st.expander("⚙️ Configurar Identidade da Marca (DNA)", expanded=True):
-    dna_input = st.text_input(
-        "Defina o perfil do negócio e tom de voz:", 
-        type="password", 
-        placeholder="Ex: Consultoria financeira, tom sério e educativo..."
+    # REMOVIDO O PASSWORD - Agora ela vê o que escreve
+    dna_input = st.text_area(
+        "Descreva o nicho, tom de voz e público-alvo:", 
+        placeholder="Ex: Loja de sapatos femininos, tom descontraído e moderno, público 20-35 anos...",
+        help="Essas informações guiarão a inteligência de todas as gerações."
     )
     if dna_input:
         st.session_state.dna_marca = dna_input
     
     if st.session_state.dna_marca:
-        st.caption(f"✅ **DNA atual:** {st.session_state.dna_marca[:60]}...")
+        # Mensagem discreta confirmando que o DNA está ativo
+        st.info(f"📍 DNA ativo: {st.session_state.dna_marca[:70]}...")
 
 st.markdown("---")
 
-# --- 🧠 LÓGICA DO SUPER AGENTE (OPENAI) ---
-def chamar_ia(prompt_sistema, prompt_usuario):
+# --- 🧠 LÓGICA DE GERAÇÃO (OPENAI & GEMINI) ---
+def chamar_ia_completa(tema, formato, precisa_imagem):
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    
+    sys_prompt = f"""
+    Você é um especialista em marketing digital e copywriter.
+    ESTILO DA MARCA: {st.session_state.dna_marca}
+    
+    INSTRUÇÕES:
+    - Use emojis em abundância para engajamento.
+    - Crie ganchos fortes no início.
+    - Finalize com uma CTA (Chamada para Ação).
+    - Inclua hashtags relevantes.
+    """
+    
+    user_prompt = f"Gere conteúdo para um {formato} sobre o tema: {tema}."
+    if formato == "Carrossel":
+        user_prompt += " Sugira o que escrever em cada slide (mínimo 5 slides)."
+
     response = client.chat.completions.create(
         model="gpt-4o",
-        messages=[
-            {"role": "system", "content": prompt_sistema},
-            {"role": "user", "content": prompt_usuario}
-        ]
+        messages=[{"role": "system", "content": sys_prompt}, {"role": "user", "content": user_prompt}]
     )
-    return response.choices[0].message.content
-
-# --- 🎨 LÓGICA DO PROMPT DE IMAGEM (GEMINI) ---
-def gerar_prompt_imagem(tema_base):
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    prompt = f"Crie um prompt detalhado e profissional para uma IA geradora de imagens. O tema é: {tema_base}. Considere o DNA da marca: {st.session_state.dna_marca}. O estilo deve ser focado em redes sociais de alta qualidade."
-    response = model.generate_content(prompt)
-    return response.text
-
-# --- 🗂️ INTERFACE DE ABAS ---
-tab1, tab2, tab3 = st.tabs(["✍️ Legendas", "📱 Stories", "🎨 Criador de Prompts (Solo)"])
-
-# 1. ABA DE LEGENDAS
-with tab1:
-    col1, col2 = st.columns([1, 1])
     
-    with col1:
-        tipo_post = st.selectbox("Formato da Postagem:", ["Post Simples", "Carrossel", "Reels", "Vídeo Curto"])
-        tema_legenda = st.text_area("Sobre o que é a postagem?", height=100)
+    texto_final = response.choices[0].message.content
+    prompt_img = ""
+    
+    if precisa_imagem:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        prompt_refinado = f"Crie um prompt visual rico para IA baseado no tema '{tema}' e no estilo de marca: {st.session_state.dna_marca}. Foco em qualidade fotográfica para Instagram."
+        img_res = model.generate_content(prompt_refinado)
+        prompt_img = img_res.text
         
-        # Opção de gerar prompt de imagem junto
-        precisa_imagem = st.radio("Gerar prompt de imagem para esta legenda?", ["Não", "Sim"], horizontal=True)
+    return texto_final, prompt_img
 
-    if st.button("Gerar Conteúdo Completo ✨"):
-        if not st.session_state.dna_marca:
-            st.warning("⚠️ Configure o DNA da marca acima.")
+# --- ABAS ---
+tab1, tab2, tab3 = st.tabs(["✍️ Legendas", "📱 Stories", "🎨 Prompts Gemini"])
+
+with tab1:
+    col_in, col_out = st.columns([1, 1.2])
+    with col_in:
+        formato = st.selectbox("Formato do Post:", ["Post Simples", "Carrossel", "Reels", "Anúncio"])
+        tema = st.text_area("Sobre o que vamos falar hoje?", placeholder="Ex: Promoção de queima de estoque")
+        check_img = st.checkbox("Gerar prompt de imagem para este post?")
+        btn_gerar = st.button("Gerar Conteúdo ✨")
+
+    if btn_gerar:
+        if st.session_state.dna_marca:
+            txt, img = chamar_ia_completa(tema, formato, check_img)
+            with col_out:
+                st.subheader("📝 Legenda Gerada")
+                st.write(txt)
+                if check_img:
+                    st.divider()
+                    st.subheader("🎨 Prompt de Imagem")
+                    st.code(img)
         else:
-            with st.spinner("Criando..."):
-                # System Prompt customizado
-                sys_prompt = f"Você é um social media expert. DNA: {st.session_state.dna_marca}. Use muitos emojis, hashtags e CTA."
-                user_prompt = f"Crie uma legenda para um {tipo_post} sobre: {tema_legenda}. Se for carrossel, descreva o que vai em cada slide."
-                
-                legenda_final = chamar_ia(sys_prompt, user_prompt)
-                
-                with col2:
-                    st.subheader("📝 Resultado:")
-                    st.write(legenda_final)
-                    
-                    if precisa_imagem == "Sim":
-                        st.markdown("---")
-                        st.subheader("🎨 Prompt para Imagem:")
-                        prompt_img = gerar_prompt_imagem(tema_legenda)
-                        st.code(prompt_img)
+            st.error("Por favor, preencha o DNA da Marca antes.")
 
-# 2. ABA DE STORIES
 with tab2:
-    tipo_story = st.selectbox("Tipo de Story:", ["Bastidores", "Venda Direta (Oferta)", "Educativo/Dica", "Enquetes/Interação"])
-    tema_story = st.text_area("Qual o contexto ou tema do story?")
-    
-    if st.button("Gerar Roteiro de Stories 🤳"):
-        if st.session_state.dna_marca:
-            sys_prompt = f"Especialista em Stories. DNA: {st.session_state.dna_marca}. Crie sequências dinâmicas com muitos emojis."
-            user_prompt = f"Crie um roteiro de 5 stories do tipo {tipo_story} sobre: {tema_story}. Inclua indicações de texto para a tela."
-            
-            roteiro = chamar_ia(sys_prompt, user_prompt)
-            st.markdown(roteiro)
-        else:
-            st.warning("⚠️ Configure o DNA da marca.")
+    tipo_s = st.selectbox("Estilo do Story:", ["Educativo", "Venda/Oferta", "Bastidores", "Caixinha de Perguntas"])
+    tema_s = st.text_input("Contexto do Story:")
+    if st.button("Criar Sequência de Stories 🤳"):
+        # Reaproveita a lógica da IA com ajuste de formato
+        txt, _ = chamar_ia_completa(tema_s, f"Sequência de 5 Stories estilo {tipo_s}", False)
+        st.markdown(txt)
 
-# 3. ABA DE PROMPTS GEMINI (SOLO)
 with tab3:
-    st.info("Use esta aba para criar prompts de imagens que não estão necessariamente ligados a uma legenda.")
-    tema_livre = st.text_input("Descreva a ideia da imagem:")
-    if st.button("Gerar Prompt Detalhado 🎨"):
-        if st.session_state.dna_marca:
-            res_prompt = gerar_prompt_imagem(tema_livre)
-            st.code(res_prompt)
-        else:
-            st.warning("⚠️ Configure o DNA da marca.")
+    tema_livre = st.text_input("Ideia para imagem isolada:")
+    if st.button("Gerar Prompt Detalhado"):
+        _, img_solo = chamar_ia_completa(tema_livre, "Prompt de Imagem", True)
+        st.code(img_solo)
