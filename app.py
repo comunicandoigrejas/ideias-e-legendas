@@ -3,83 +3,107 @@ from openai import OpenAI
 import google.generativeai as genai
 
 # Configuração da Página
-st.set_page_config(page_title="Gerador de Conteúdo AI", page_icon="📈")
+st.set_page_config(page_title="Social Media Pro", page_icon="📈", layout="wide")
 
-st.title("🚀 Social Media Business Generator")
-st.subheader("Crie conteúdos profissionais para qualquer nicho")
+# Título Principal
+st.title("🚀 Social Media Content Master")
+st.markdown("Gerador inteligente de Legendas, Stories e Prompts.")
 
-# --- LÓGICA DO DNA DA MARCA (MULTI-NICHO) ---
+# --- 🧬 CONFIGURAÇÃO DO DNA DA MARCA ---
 if "dna_marca" not in st.session_state:
     st.session_state.dna_marca = ""
 
-# O campo limpa ao dar enter, mas o resumo aparece embaixo
-dna_input = st.text_input(
-    "🎯 Defina o DNA do Negócio (Nicho, tom de voz, público-alvo)", 
-    type="password", 
-    placeholder="Ex: Clínica de estética, tom elegante, público feminino classe A..."
-)
-
-if dna_input:
-    st.session_state.dna_marca = dna_input
-    st.success("Configuração de marca salva!")
-
-# Exibição discreta do resumo
-if st.session_state.dna_marca:
-    st.info(f"📌 **DNA atual:** {st.session_state.dna_marca[:50]}...")
+with st.expander("⚙️ Configurar Identidade da Marca (DNA)", expanded=True):
+    dna_input = st.text_input(
+        "Defina o perfil do negócio e tom de voz:", 
+        type="password", 
+        placeholder="Ex: Consultoria financeira, tom sério e educativo..."
+    )
+    if dna_input:
+        st.session_state.dna_marca = dna_input
+    
+    if st.session_state.dna_marca:
+        st.caption(f"✅ **DNA atual:** {st.session_state.dna_marca[:60]}...")
 
 st.markdown("---")
 
-# --- FUNÇÃO DO SUPER AGENTE ---
-def gerar_conteudo_openai(tema, tipo):
+# --- 🧠 LÓGICA DO SUPER AGENTE (OPENAI) ---
+def chamar_ia(prompt_sistema, prompt_usuario):
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-    
-    system_prompt = f"""
-    Você é um estrategista de marketing digital de alto nível.
-    O perfil do cliente que você está atendendo é: {st.session_state.dna_marca}.
-    
-    Regras:
-    1. Use emojis para aumentar a retenção e o engajamento.
-    2. Garanta que o tom de voz combine exatamente com o DNA fornecido.
-    3. Inclua sempre uma CTA (Chamada para Ação) persuasiva.
-    4. Adicione um bloco de hashtags estratégicas ao final.
-    """
-    
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Gere {tipo} sobre o tema: {tema}"}
+            {"role": "system", "content": prompt_sistema},
+            {"role": "user", "content": prompt_usuario}
         ]
     )
     return response.choices[0].message.content
 
-# --- ABAS DO APP ---
-tab1, tab2, tab3 = st.tabs(["✍️ Legendas", "📱 Stories", "🎨 Prompts Gemini"])
+# --- 🎨 LÓGICA DO PROMPT DE IMAGEM (GEMINI) ---
+def gerar_prompt_imagem(tema_base):
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    prompt = f"Crie um prompt detalhado e profissional para uma IA geradora de imagens. O tema é: {tema_base}. Considere o DNA da marca: {st.session_state.dna_marca}. O estilo deve ser focado em redes sociais de alta qualidade."
+    response = model.generate_content(prompt)
+    return response.text
 
+# --- 🗂️ INTERFACE DE ABAS ---
+tab1, tab2, tab3 = st.tabs(["✍️ Legendas", "📱 Stories", "🎨 Criador de Prompts (Solo)"])
+
+# 1. ABA DE LEGENDAS
 with tab1:
-    tema_post = st.text_area("Sobre o que será o post?")
-    if st.button("Gerar Legenda Completa"):
-        if st.session_state.dna_marca:
-            res = gerar_conteudo_openai(tema_post, "uma legenda de alta conversão")
-            st.write(res)
-        else:
-            st.warning("Defina o DNA da marca primeiro.")
-
-with tab2:
-    tema_story = st.text_input("Objetivo dos Stories (Ex: Venda de produto X)")
-    if st.button("Gerar Sequência de Stories"):
-        if st.session_state.dna_marca:
-            res = gerar_conteudo_openai(tema_story, "um roteiro de 5 stories (texto e ideia visual)")
-            st.write(res)
-        else:
-            st.warning("Defina o DNA da marca primeiro.")
-
-with tab3:
-    tema_img = st.text_input("O que a imagem deve mostrar?")
-    if st.button("Gerar Prompt para Gemini"):
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-1.5-flash')
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        tipo_post = st.selectbox("Formato da Postagem:", ["Post Simples", "Carrossel", "Reels", "Vídeo Curto"])
+        tema_legenda = st.text_area("Sobre o que é a postagem?", height=100)
         
-        prompt_refinado = f"Crie um prompt detalhado de imagem para IA baseado no DNA {st.session_state.dna_marca}. O tema é: {tema_img}"
-        response = model.generate_content(prompt_refinado)
-        st.code(response.text)
+        # Opção de gerar prompt de imagem junto
+        precisa_imagem = st.radio("Gerar prompt de imagem para esta legenda?", ["Não", "Sim"], horizontal=True)
+
+    if st.button("Gerar Conteúdo Completo ✨"):
+        if not st.session_state.dna_marca:
+            st.warning("⚠️ Configure o DNA da marca acima.")
+        else:
+            with st.spinner("Criando..."):
+                # System Prompt customizado
+                sys_prompt = f"Você é um social media expert. DNA: {st.session_state.dna_marca}. Use muitos emojis, hashtags e CTA."
+                user_prompt = f"Crie uma legenda para um {tipo_post} sobre: {tema_legenda}. Se for carrossel, descreva o que vai em cada slide."
+                
+                legenda_final = chamar_ia(sys_prompt, user_prompt)
+                
+                with col2:
+                    st.subheader("📝 Resultado:")
+                    st.write(legenda_final)
+                    
+                    if precisa_imagem == "Sim":
+                        st.markdown("---")
+                        st.subheader("🎨 Prompt para Imagem:")
+                        prompt_img = gerar_prompt_imagem(tema_legenda)
+                        st.code(prompt_img)
+
+# 2. ABA DE STORIES
+with tab2:
+    tipo_story = st.selectbox("Tipo de Story:", ["Bastidores", "Venda Direta (Oferta)", "Educativo/Dica", "Enquetes/Interação"])
+    tema_story = st.text_area("Qual o contexto ou tema do story?")
+    
+    if st.button("Gerar Roteiro de Stories 🤳"):
+        if st.session_state.dna_marca:
+            sys_prompt = f"Especialista em Stories. DNA: {st.session_state.dna_marca}. Crie sequências dinâmicas com muitos emojis."
+            user_prompt = f"Crie um roteiro de 5 stories do tipo {tipo_story} sobre: {tema_story}. Inclua indicações de texto para a tela."
+            
+            roteiro = chamar_ia(sys_prompt, user_prompt)
+            st.markdown(roteiro)
+        else:
+            st.warning("⚠️ Configure o DNA da marca.")
+
+# 3. ABA DE PROMPTS GEMINI (SOLO)
+with tab3:
+    st.info("Use esta aba para criar prompts de imagens que não estão necessariamente ligados a uma legenda.")
+    tema_livre = st.text_input("Descreva a ideia da imagem:")
+    if st.button("Gerar Prompt Detalhado 🎨"):
+        if st.session_state.dna_marca:
+            res_prompt = gerar_prompt_imagem(tema_livre)
+            st.code(res_prompt)
+        else:
+            st.warning("⚠️ Configure o DNA da marca.")
