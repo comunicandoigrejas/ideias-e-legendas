@@ -22,8 +22,14 @@ except Exception as e:
 def autenticar_usuario(username, password):
     payload = {"username": username, "password": password}
     try:
-        # allow_redirects é vital para o Google Scripts
-        response = requests.post(SCRIPT_URL, json=payload, allow_redirects=True, timeout=10)
+        # O segredo está no 'json=payload' e 'allow_redirects=True'
+        response = requests.post(
+            SCRIPT_URL, 
+            json=payload, 
+            allow_redirects=True, 
+            timeout=10
+        )
+        # Se o Google retornar HTML em vez de JSON, o erro aparecerá aqui
         return response.json()
     except Exception as e:
         return {"status": "error", "message": str(e)}
