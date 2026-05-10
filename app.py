@@ -12,7 +12,7 @@ st.set_page_config(page_title="Social Media Expert AI", page_icon="📸", layout
 try:
     # AQUI ESTAVA O ERRO: Use apenas o NOME da variável
     if "URL_PLANILHA_SCRIPT" in st.secrets:
-        SCRIPT_URL = st.secrets["https://script.google.com/macros/s/AKfycbxBA4CduznYTrW2hK-ULLhMKvutqjg6DSMTgp0YbHBqKmRPz1l5i9Mc1ILxo8tGFDVfVg/exec"]
+        SCRIPT_URL = st.secrets["https://script.google.com/macros/library/d/12BcK5m7FGEUlddNS1uX3evvQR2vneclscFSMlFITVONMxHsidM22FGUO/1"]
     else:
         st.error("⚠️ Erro: A chave 'URL_PLANILHA_SCRIPT' não foi encontrada no painel Secrets.")
         st.stop()
