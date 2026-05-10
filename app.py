@@ -53,10 +53,15 @@ if "logado" not in st.session_state:
 def autenticar_usuario(username, password):
     payload = {"username": username, "password": password}
     try:
-        response = requests.post(SCRIPT_URL, json=payload)
+        # É vital enviar como JSON e com os headers corretos
+        response = requests.post(
+            SCRIPT_URL, 
+            data=json.dumps(payload), 
+            headers={"Content-Type": "application/json"}
+        )
         return response.json()
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    except:
+        return {"status": "error"}
 
 # 3. TELA DE LOGIN
 if "logado" not in st.session_state:
