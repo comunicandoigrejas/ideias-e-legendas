@@ -22,14 +22,7 @@ except Exception as e:
 def autenticar_usuario(username, password):
     payload = {"username": username, "password": password}
     try:
-        # O segredo está no 'json=payload' e 'allow_redirects=True'
-        response = requests.post(
-            SCRIPT_URL, 
-            json=payload, 
-            allow_redirects=True, 
-            timeout=10
-        )
-        # Se o Google retornar HTML em vez de JSON, o erro aparecerá aqui
+        response = requests.post(SCRIPT_URL, json=payload, allow_redirects=True, timeout=10)
         return response.json()
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -55,12 +48,20 @@ if not st.session_state.logado:
 
 # --- INTERFACE PÓS-LOGIN ---
 user = st.session_state.user_data
-st.sidebar.title(f"Olá, {user['nome_exibicao']}")
-st.sidebar.info(f"Nicho: {user['nicho']}")
+
+# Cabeçalho com Nome do Cliente e Botão de Sair
+col_nome, col_sair = st.columns([0.8, 0.2])
+with col_nome:
+    st.markdown(f"### 👤 {user['nome_exibicao']}")
+with col_sair:
+    if st.button("Sair do Aplicativo 🚪", use_container_width=True):
+        st.session_state.logado = False
+        st.session_state.user_data = None
+        st.rerun()
 
 st.title("🚀 Social Media Content Master")
 
-# O DNA agora vem da planilha do usuário logado
+# DNA Personalizado
 with st.expander("🧬 DNA Personalizado", expanded=False):
     dna_atual = st.text_area("Contexto da IA:", value=user['dna'], height=150)
 
@@ -86,12 +87,28 @@ tab1, tab2 = st.tabs(["✍️ Legendas", "🎨 Visual"])
 with tab1:
     tema = st.text_input("Tema do Post:")
     if st.button("Gerar Legenda ✨"):
-        st.code(executar_agente(f"Crie uma legenda para Instagram sobre {tema}"), language=None)
+        legenda_gerada = executar_agente(f"Crie uma legenda para Instagram sobre {tema}")
+        st.text_area("Legenda Gerada:", value=legenda_gerada, height=300)
+        # O Streamlit já tem um ícone de "copiar" nativo no canto superior direito do text_area
+        st.success("Legenda gerada com sucesso!")
 
 with tab2:
     ideia = st.text_input("Ideia para Imagem:")
     if st.button("Gerar Prompt 🎨"):
         model = genai.GenerativeModel('gemini-1.5-flash')
-        # Aplica as cores padrão: azul, roxo, verde, laranja e amarelo
-        prompt = model.generate_content(f"Crie um prompt 1:1. Cores: azul, roxo, verde, laranja e amarelo. Tema: {ideia}")
-        st.code(prompt.text, language=None)
+        prompt_input = f"Crie um prompt 1:1. Cores: azul, roxo, verde, laranja e amarelo. Tema: {ideia}"
+        prompt_resultado = model.generate_content(prompt_input)
+        st.text_area("Prompt para IA:", value=prompt_resultado.text, height=150)
+        st.info("Prompt gerado! Use as cores da marca: azul, roxo, verde, laranja e amarelo.")
+
+# CSS para remover a barra lateral
+st.markdown(
+    """
+    <style>
+        section[data-testid="stSidebar"] {
+            display: none;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
