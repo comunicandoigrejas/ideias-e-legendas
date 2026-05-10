@@ -87,10 +87,18 @@ tab1, tab2 = st.tabs(["✍️ Legendas", "🎨 Visual"])
 with tab1:
     tema = st.text_input("Tema do Post:")
     if st.button("Gerar Legenda ✨"):
+        # Gera a legenda usando o DNA e a versão bíblica ARA
         legenda_gerada = executar_agente(f"Crie uma legenda para Instagram sobre {tema}")
-        st.text_area("Legenda Gerada:", value=legenda_gerada, height=300)
-        # O Streamlit já tem um ícone de "copiar" nativo no canto superior direito do text_area
-        st.success("Legenda gerada com sucesso!")
+        
+        # Exibimos a legenda num campo de texto que permite edição e tem botão de cópia nativo
+        st.text_area("Legenda Gerada (Pode editar antes de copiar):", value=legenda_gerada, height=300, key="txt_legenda")
+        
+        # Botão adicional para facilitar a cópia em dispositivos móveis
+        if st.copy_to_clipboard:
+            st.copy_to_clipboard(legenda_gerada)
+            st.success("✅ Legenda gerada e copiada para a área de transferência!")
+        else:
+            st.info("💡 Use o botão no canto superior direito do texto acima para copiar.")
 
 with tab2:
     ideia = st.text_input("Ideia para Imagem:")
