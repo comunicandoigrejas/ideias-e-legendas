@@ -9,7 +9,16 @@ st.set_page_config(page_title="Social Media Expert AI", page_icon="📸", layout
 
 # URL do seu Google Apps Script (Cadastre nos Secrets do Streamlit)
 try:
-    SCRIPT_URL = st.secrets["https://script.google.com/macros/s/AKfycbxBA4CduznYTrW2hK-ULLhMKvutqjg6DSMTgp0YbHBqKmRPz1l5i9Mc1ILxo8tGFDVfVg/exec"]
+   # Substitua a sua linha 12 por este bloco de diagnóstico:
+try:
+    if "URL_PLANILHA_SCRIPT" in st.secrets:
+        SCRIPT_URL = st.secrets["https://script.google.com/macros/s/AKfycbxBA4CduznYTrW2hK-ULLhMKvutqjg6DSMTgp0YbHBqKmRPz1l5i9Mc1ILxo8tGFDVfVg/exec"]
+    else:
+        st.error("⚠️ A chave 'URL_PLANILHA_SCRIPT' não foi encontrada nos Secrets do painel.")
+        st.stop()
+except Exception as e:
+    st.error(f"⚠️ Erro ao aceder aos Secrets: {e}")
+    st.stop()
 except:
     st.error("Erro: URL_PLANILHA_SCRIPT não configurada nos Secrets.")
     st.stop()
