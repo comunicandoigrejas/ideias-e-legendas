@@ -87,27 +87,25 @@ tab1, tab2 = st.tabs(["✍️ Legendas", "🎨 Visual"])
 with tab1:
     tema = st.text_input("Tema do Post:")
     if st.button("Gerar Legenda ✨"):
-        # Gera a legenda usando o DNA e a versão bíblica ARA
+        # Gera a legenda com base no DNA e na Bíblia ARA
         legenda_gerada = executar_agente(f"Crie uma legenda para Instagram sobre {tema}")
         
-        # Exibimos a legenda num campo de texto que permite edição e tem botão de cópia nativo
-        st.text_area("Legenda Gerada (Pode editar antes de copiar):", value=legenda_gerada, height=300, key="txt_legenda")
-        
-        # Botão adicional para facilitar a cópia em dispositivos móveis
-        if st.copy_to_clipboard:
-            st.copy_to_clipboard(legenda_gerada)
-            st.success("✅ Legenda gerada e copiada para a área de transferência!")
-        else:
-            st.info("💡 Use o botão no canto superior direito do texto acima para copiar.")
+        st.write("### Legenda Gerada:")
+        # O componente st.code fornece o botão 'Copiar' automaticamente
+        st.code(legenda_gerada, language=None)
+        st.success("✅ Legenda pronta! Clique no ícone no canto superior direito do quadro acima para copiar.")
 
 with tab2:
     ideia = st.text_input("Ideia para Imagem:")
     if st.button("Gerar Prompt 🎨"):
         model = genai.GenerativeModel('gemini-1.5-flash')
-        prompt_input = f"Crie um prompt 1:1. Cores: azul, roxo, verde, laranja e amarelo. Tema: {ideia}"
+        # Mantém as cores da marca: azul, roxo, verde, laranja e amarelo
+        prompt_input = f"Crie um prompt 1:1 para IA de imagem. Cores: azul, roxo, verde, laranja e amarelo. Tema: {ideia}"
         prompt_resultado = model.generate_content(prompt_input)
-        st.text_area("Prompt para IA:", value=prompt_resultado.text, height=150)
-        st.info("Prompt gerado! Use as cores da marca: azul, roxo, verde, laranja e amarelo.")
+        
+        st.write("### Prompt para a IA:")
+        st.code(prompt_resultado.text, language=None)
+        st.info("🎨 Prompt gerado com suas cores padrão. Clique no ícone acima para copiar.")
 
 # CSS para remover a barra lateral
 st.markdown(
