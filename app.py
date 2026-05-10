@@ -3,25 +3,31 @@ from openai import OpenAI
 import google.generativeai as genai
 import time
 import requests
+import json
 
 # 1. CONFIGURAÇÕES DA PÁGINA
 st.set_page_config(page_title="Social Media Expert AI", page_icon="📸", layout="wide")
 
-# URL do seu Google Apps Script (Cadastre nos Secrets do Streamlit)
-try:
-   # Substitua a sua linha 12 por este bloco de diagnóstico:
+# 2. VALIDAÇÃO DOS SECRETS (Ajustado para evitar IndentationError)
 try:
     if "URL_PLANILHA_SCRIPT" in st.secrets:
-        SCRIPT_URL = st.secrets["https://script.google.com/macros/s/AKfycbxBA4CduznYTrW2hK-ULLhMKvutqjg6DSMTgp0YbHBqKmRPz1l5i9Mc1ILxo8tGFDVfVg/exec"]
+        SCRIPT_URL = st.secrets["URL_PLANILHA_SCRIPT"]
     else:
-        st.error("⚠️ A chave 'URL_PLANILHA_SCRIPT' não foi encontrada nos Secrets do painel.")
+        st.error("⚠️ Erro: A chave 'URL_PLANILHA_SCRIPT' não foi encontrada nos Secrets.")
         st.stop()
+    
+    client_openai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    ASSISTANT_ID = st.secrets["ASSISTANT_ID"]
 except Exception as e:
-    st.error(f"⚠️ Erro ao aceder aos Secrets: {e}")
+    st.error(f"⚠️ Erro de Configuração: {e}")
     st.stop()
-except:
-    st.error("Erro: URL_PLANILHA_SCRIPT não configurada nos Secrets.")
-    st.stop()
+
+# --- CONTINUAÇÃO DO CÓDIGO (LOGIN) ---
+if "logado" not in st.session_state:
+    st.session_state.logado = False
+
+# ... (restante do seu código de login e abas)
 
 # 2. FUNÇÃO DE AUTENTICAÇÃO (Apps Script)
 def autenticar_usuario(username, password):
