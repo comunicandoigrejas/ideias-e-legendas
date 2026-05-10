@@ -11,7 +11,7 @@ st.set_page_config(page_title="Social Media Expert AI", page_icon="📸", layout
 # 2. VALIDAÇÃO DOS SECRETS (Ajustado para evitar IndentationError)
 try:
     if "URL_PLANILHA_SCRIPT" in st.secrets:
-        SCRIPT_URL = st.secrets["URL_PLANILHA_SCRIPT"]
+        SCRIPT_URL = st.secrets["https://script.google.com/macros/s/AKfycbxBA4CduznYTrW2hK-ULLhMKvutqjg6DSMTgp0YbHBqKmRPz1l5i9Mc1ILxo8tGFDVfVg/exec"]
     else:
         st.error("⚠️ Erro: A chave 'URL_PLANILHA_SCRIPT' não foi encontrada nos Secrets.")
         st.stop()
