@@ -10,12 +10,22 @@ st.set_page_config(page_title="Social Media Expert AI", page_icon="📸", layout
 
 # 2. INICIALIZAÇÃO E VALIDAÇÃO DOS SEGREDOS
 try:
-    # O código DEVE buscar pelo nome da chave, NÃO pelo link direto
+    # AQUI ESTAVA O ERRO: Use apenas o NOME da variável
     if "URL_PLANILHA_SCRIPT" in st.secrets:
         SCRIPT_URL = st.secrets["https://script.google.com/macros/s/AKfycbxBA4CduznYTrW2hK-ULLhMKvutqjg6DSMTgp0YbHBqKmRPz1l5i9Mc1ILxo8tGFDVfVg/exec"]
     else:
         st.error("⚠️ Erro: A chave 'URL_PLANILHA_SCRIPT' não foi encontrada no painel Secrets.")
         st.stop()
+
+    # Inicialização das IAs usando os nomes das chaves
+    client_openai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    ASSISTANT_ID = st.secrets["ASSISTANT_ID"]
+    
+except Exception as e:
+    # Este erro vai te mostrar se faltar a API_KEY ou outra chave
+    st.error(f"Erro de Configuração: {e}")
+    st.stop()
 
     # Inicialização das IAs
     client_openai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
