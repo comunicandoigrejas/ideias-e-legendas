@@ -53,15 +53,16 @@ if "logado" not in st.session_state:
 def autenticar_usuario(username, password):
     payload = {"username": username, "password": password}
     try:
-        # É vital enviar como JSON e com os headers corretos
+        # O Google Script sempre redireciona o POST, precisamos permitir isso
         response = requests.post(
             SCRIPT_URL, 
-            data=json.dumps(payload), 
-            headers={"Content-Type": "application/json"}
+            json=payload, # O parâmetro 'json' já configura os headers automaticamente
+            allow_redirects=True,
+            timeout=10
         )
         return response.json()
-    except:
-        return {"status": "error"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # 3. TELA DE LOGIN
 if "logado" not in st.session_state:
