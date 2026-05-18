@@ -41,7 +41,7 @@ if st.session_state["usuario_logado"] is not None:
     # Configura a IA do Google usando a chave API exclusiva deste cliente (Coluna F)
     genai.configure(api_key=dados.get("api_key_user"))
     
-    # Exibe o Nome do Cliente ACIMA do título do sistema, como pedido!
+    # Exibe o Nome do Cliente ACIMA do título do sistema
     st.write(f"✨ Cliente Ativo: **{dados.get('nome_exibicao', 'Varão')}**")
     st.title("📸 Social Media Content Master")
     
@@ -53,90 +53,102 @@ if st.session_state["usuario_logado"] is not None:
         
     st.divider()
     
-    # ------------------------------------------
-    # SEÇÃO 1: CRIAÇÃO DE LEGENDA
-    # ------------------------------------------
-    st.write(f"### 📝 1. Gerador de Legendas Profissionais")
-    st.caption(f"Nicho configurado para este perfil: **{dados.get('nicho', 'Geral')}**")
+    # CREAÇÃO DAS JANELAS SEPARADAS (ABAS)
+    janela_legenda, janela_arte = st.tabs(["📝 Criar Legenda", "🎨 Criar Arte"])
     
-    tema_legenda = st.text_area("Sobre qual assunto ou tema você deseja criar a sua legenda hoje, irmão?", placeholder="Ex: Aviso sobre o culto de jovens deste sábado ou promoção de doces gourmet...")
-    
-    if st.button("Gerar Legenda Abençoada ✨"):
-        if tema_legenda.strip():
-            with st.spinner("O Gemini está redigindo a sua legenda personalizada..."):
-                try:
-                    dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
-                    
-                    # Instancia o modelo de texto passando as instruções do Chat Pronto (DNA)
-                    modelo_texto = genai.GenerativeModel(
-                        model_name="gemini-1.5-flash",
-                        system_instruction=f"Você é um redator profissional. Use estritamente o seguinte estilo/DNA de escrita: {dna_do_chat}. Foque no nicho: {dados.get('nicho')}."
-                    )
-                    
-                    resposta_texto = modelo_texto.generate_content(f"Escreva uma legenda completa para post de Instagram sobre: {tema_legenda}")
-                    st.session_state["legenda_gerada"] = resposta_texto.text
-                except Exception as e:
-                    st.error(f"Erro ao gerar a legenda: {e}")
-        else:
-            st.warning("Por favor, digite o assunto da legenda antes de gerar.")
-            
-    # Se houver uma legenda já criada, exibe na tela com o botão de cópia nativo
-    if st.session_state["legenda_gerada"]:
-        st.success("Legenda pronta! Para copiar, basta clicar no ícone de duas folhas no canto superior direito do bloco abaixo:")
-        # O st.code cria uma caixa linda onde o Streamlit coloca o botão de cópia automaticamente!
-        st.code(st.session_state["legenda_gerada"], language="text")
+    # ------------------------------------------
+    # JANELA 1: CRIAÇÃO DE LEGENDA
+    # ------------------------------------------
+    with janela_legenda:
+        st.write(f"### Gerador de Legendas Profissionais")
+        st.caption(f"Nicho configurado para este perfil: **{dados.get('nicho', 'Geral')}**")
         
-    st.divider()
-    
-    # ------------------------------------------
-    # SEÇÃO 2: CRIAÇÃO DA ARTE PRONTA
-    # ------------------------------------------
-    st.write("### 🎨 2. Gerador de Imagens Integrado (Pronto para o Feed)")
-    ideia_arte = st.text_input("Digite a ideia da imagem que você quer que o Gemini entregue pronta:")
-    
-    if st.button("Gerar Imagem Pronta 📸"):
-        if ideia_arte.strip():
-            with st.spinner("Processando estilo... O Gemini está gerando a sua arte real agora, aguarde..."):
-                try:
-                    dna_do_chat = dados.get("dna", "Estilo moderno")
-                    
-                    # Passo A: O Gemini de texto interpreta o DNA e cria o prompt perfeito com as cores oficiais
-                    modelo_prompt = genai.GenerativeModel(
-                        model_name="gemini-1.5-flash",
-                        system_instruction=(
-                            f"Você é um designer. Converta a ideia em um prompt de imagem detalhado baseado neste DNA: '{dna_do_chat}'. "
-                            f"DIRETRIZ VISUAL OBRIGATÓRIA: A imagem DEVE focar nas tonalidades de azul, roxo, verde, laranja e amarelo. "
-                            f"Importante: Não coloque textos, letras ou palavras escritas dentro da imagem."
+        tema_legenda = st.text_area(
+            "Sobre qual assunto ou tema você deseja criar a sua legenda hoje, irmão?", 
+            placeholder="Ex: Aviso sobre o culto de jovens deste sábado ou promoção de doces gourmet...",
+            key="input_tema_legenda"
+        )
+        
+        if st.button("Gerar Legenda Abençoada ✨", key="btn_gerar_legenda"):
+            if tema_legenda.strip():
+                with st.spinner("O Gemini está redigindo a sua legenda personalizada..."):
+                    try:
+                        dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
+                        
+                        # Instancia o modelo de texto passando as instruções do Chat Pronto (DNA)
+                        modelo_texto = genai.GenerativeModel(
+                            model_name="gemini-1.5-flash",
+                            system_instruction=f"Você é um redator profissional. Use estritamente o seguinte estilo/DNA de escrita: {dna_do_chat}. Foque no nicho: {dados.get('nicho')}."
                         )
-                    )
-                    prompt_refinado = modelo_prompt.generate_content(f"Refine o prompt visual para a ideia: {ideia_arte}").text
-                    
-                    # Passo B: O Imagen 3 entra em ação e desenha a imagem real no formato quadrado 1:1
-                    modelo_imagem = genai.ImageGenerationModel("imagen-3.0-generate-002")
-                    resultado = modelo_imagem.generate_images(
-                        prompt=prompt_refinado,
-                        number_of_images=1,
-                        aspect_ratio="1:1"  # Força o formato perfeito para o feed do Instagram!
-                    )
-                    
-                    # Converte o resultado para exibição e download
-                    imagem_bytes = resultado.images[0].image.bytes
-                    
-                    st.success("Glória a Deus! Arte criada com sucesso:")
-                    # Mostra a imagem na tela
-                    st.image(imagem_bytes, caption="Sua arte gerada (Proporção 1:1)", use_container_width=True)
-                    
-                    # Botão para o cliente fazer o download do arquivo PNG limpo
-                    st.download_button(
-                        label="📥 Baixar Imagem Pronta",
-                        data=imagem_bytes,
-                        file_name="arte_social_media.png",
-                        mime="image/png"
-                    )
-                except Exception as e:
-                    st.error(f"Erro ao processar ou gerar a imagem: {e}")
-        else:
-            st.warning("Por favor, digite qual é a ideia da imagem.")
+                        
+                        resposta_texto = modelo_texto.generate_content(f"Escreva uma legenda completa para post de Instagram sobre: {tema_legenda}")
+                        st.session_state["legenda_gerada"] = resposta_texto.text
+                    except Exception as e:
+                        st.error(f"Erro ao gerar a legenda: {e}")
+            else:
+                st.warning("Por favor, digite o assunto da legenda antes de gerar.")
+                
+        # Se houver uma legenda já criada, exibe na tela com o botão de cópia nativo
+        if st.session_state["legenda_gerada"]:
+            st.success("Legenda pronta! Para copiar, basta clicar no ícone de duas folhas no canto superior direito do bloco abaixo:")
+            st.code(st.session_state["legenda_gerada"], language="text")
+            
+    # ------------------------------------------
+    # JANELA 2: CRIAÇÃO DA ARTE PRONTA
+    # ------------------------------------------
+    with janela_arte:
+        st.write("### Gerador de Imagens Integrado (Pronto para o Feed)")
+        st.caption("As imagens são geradas automaticamente no formato quadrado (1:1) para o Instagram.")
+        
+        ideia_arte = st.text_input(
+            "Digite a ideia da imagem que você quer que o Gemini entregue pronta:",
+            key="input_ideia_arte"
+        )
+        
+        if st.button("Gerar Imagem Pronta 📸", key="btn_gerar_arte"):
+            if ideia_arte.strip():
+                with st.spinner("Processando estilo... O Gemini está gerando a sua arte real agora, aguarde..."):
+                    try:
+                        dna_do_chat = dados.get("dna", "Estilo moderno")
+                        
+                        # Passo A: O Gemini de texto interpreta o DNA e cria o prompt perfeito com as cores oficiais
+                        modelo_prompt = genai.GenerativeModel(
+                            model_name="gemini-1.5-flash",
+                            system_instruction=(
+                                f"Você é um designer. Converta a ideia em um prompt de imagem detalhado baseado neste DNA: '{dna_do_chat}'. "
+                                f"DIRETRIZ VISUAL OBRIGATÓRIA: A imagem DEVE focar nas tonalidades de azul, roxo, verde, laranja e amarelo. "
+                                f"Importante: Não coloque textos, letras ou palavras escritas dentro da imagem."
+                            )
+                        )
+                        prompt_refinado = modelo_prompt.generate_content(f"Refine o prompt visual para a ideia: {ideia_arte}").text
+                        
+                        # Passo B: O Imagen 3 entra em ação e desenha a imagem real no formato quadrado 1:1
+                        modelo_imagem = genai.ImageGenerationModel("imagen-3.0-generate-002")
+                        resultado = modelo_imagem.generate_images(
+                            prompt=prompt_refinado,
+                            number_of_images=1,
+                            aspect_ratio="1:1"  # Força o formato perfeito para o feed!
+                        )
+                        
+                        # Converte o resultado para exibição e download
+                        imagem_bytes = resultado.images[0].image.bytes
+                        
+                        st.success("Glória a Deus! Arte criada com sucesso:")
+                        # Mostra a imagem na tela
+                        st.image(imagem_bytes, caption="Sua arte gerada (Proporção 1:1)", use_container_width=True)
+                        
+                        # Botão para o cliente fazer o download do arquivo PNG limpo
+                        st.download_button(
+                            label="📥 Baixar Imagem Pronta",
+                            data=imagem_bytes,
+                            file_name="arte_social_media.png",
+                            mime="image/png",
+                            key="btn_download_arte"
+                        )
+                    except Exception as e:
+                        st.error(f"Erro ao processar ou gerar a imagem: {e}")
+            else:
+                st.warning("Por favor, digite qual é a ideia da imagem.")
 
 else:
     # ==========================================
