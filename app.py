@@ -43,34 +43,34 @@ def gerar_imagem_com_gemini(ideia_usuario, dna_chat_pronto):
         st.error(f"Erro ao operar a geração da imagem: {e}")
         return None
 
-# --- SUA TELA DE CRIAÇÃO DE IMAGEM ---
-st.title("📸 Gerador de Imagens Integrado")
-st.write(f"Bem-vindo, abençoado **{st.session_state.usuario_logado.get('nome_exibicao', 'Varão')}**!")
+# --- CONTROLE DE TELA SEGURO ---
 
-# Input onde o usuário digita a ideia simples
-ideia = st.text_input("Qual ideia de imagem você quer que o Gemini crie hoje?")
+# Verificamos primeiro se o usuário já passou pelo login com sucesso
+if "usuario_logado" in st.session_state and st.session_state["usuario_logado"] is not None:
+    
+    # 1. Se ele estiver logado, pegamos os dados dele com segurança
+    dados_usuario = st.session_state["usuario_logado"]
+    nome = dados_usuario.get("nome_exibicao", "Varão")
+    
+    # 2. Exibe o topo da tela personalizado (sem a barra lateral)
+    st.write(f"✨ Cliente: **{nome}**")
+    st.title("📸 Social Media Content Master")
+    
+    # --- AQUI CONTINUA O SEU CÓDIGO DA ÁREA LOGADA ---
+    # Onde gera as ideias, imagens 1:1, cores da marca e o botão de copiar a legenda...
 
-if st.button("Gerar Imagem Pronta ✨"):
-    if ideia:
-        with st.spinner("Aguarde, irmão... O Gemini está processando e gerando sua imagem pronta..."):
-            # Puxa a configuração do chat pronto (coluna D da sua planilha)
-            dna_do_usuario = st.session_state.usuario_logado.get("dna", "Estilo profissional e moderno")
-            
-            # Executa a função
-            imagem_bytes = gerar_imagem_com_gemini(ideia, dna_do_usuario)
-            
-            if imagem_bytes:
-                st.success("Bênção pura! Imagem gerada com sucesso:")
-                
-                # Exibe a imagem gerada direto na tela do App
-                st.image(imagem_bytes, caption="Sua imagem gerada (Proporção 1:1)", use_container_width=True)
-                
-                # Cria o botão para o cliente baixar o arquivo PNG pronto
-                st.download_button(
-                    label="📥 Baixar Imagem Pronta",
-                    data=imagem_bytes,
-                    file_name="post_instagram_pronto.png",
-                    mime="image/png"
-                )
-    else:
-        st.warning("Por favor, digite a ideia da imagem para que o sistema possa trabalhar.")
+else:
+    # 3. Se NÃO estiver logado, exibe estritamente a tela de login
+    st.title("🔑 Social Media Content Master - Login")
+    
+    with st.form("formulario_login"):
+        usuario_input = st.text_input("Usuário")
+        senha_input = st.text_input("Senha", type="password")
+        botao_entrar = _=st.form_submit_button("Entrar no Sistema")
+        
+        if botao_entrar:
+            # Aqui roda a sua função doPost(e) que você já configurou.
+            # Quando o login funcionar, você salva os dados assim:
+            # st.session_state["usuario_logado"] = resultado_do_google_sheets
+            # st.rerun()
+            pass
