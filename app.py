@@ -38,7 +38,7 @@ if st.session_state["usuario_logado"] is not None:
     # ==========================================
     dados = st.session_state["usuario_logado"]
     
-    # SÓ CONFIGURA A API KEY AQUI DENTRO (Evita que o app quebre ao abrir)
+    # Configura a API Key após o login
     if dados.get("api_key_user"):
         genai.configure(api_key=dados.get("api_key_user"))
     
@@ -76,8 +76,9 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
                         
+                        # Usando o nome estável universal para evitar o erro 404 da v1beta
                         modelo_texto = genai.GenerativeModel(
-                            model_name="models/gemini-1.5-flash-latest",
+                            model_name="gemini-1.5-flash",
                             system_instruction=f"Você é um redator profissional. Use estritamente o seguinte estilo/DNA de escrita: {dna_do_chat}. Foque no nicho: {dados.get('nicho')}."
                         )
                         
@@ -110,8 +111,9 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Estilo moderno")
                         
+                        # Usando o nome estável universal também no criador do prompt
                         modelo_prompt = genai.GenerativeModel(
-                            model_name="models/gemini-1.5-flash-latest",
+                            model_name="gemini-1.5-flash",
                             system_instruction=(
                                 f"Você é um designer profissional. Converta a ideia em um prompt de imagem detalhado baseado neste DNA: '{dna_do_chat}'. "
                                 f"DIRETRIZ VISUAL OBRIGATÓRIA: A imagem DEVE focar nas tonalidades de azul, roxo, verde, laranja e amarelo. "
@@ -122,6 +124,7 @@ if st.session_state["usuario_logado"] is not None:
                         resposta_prompt = modelo_prompt.generate_content(f"Refine o prompt visual para a ideia: {id_arte}")
                         prompt_refinado = resposta_prompt.text
                         
+                        # Chamada padrão para o Imagen 3
                         modelo_imagem = genai.ImageGenerationModel("imagen-3.0-generate-002")
                         resultado = modelo_imagem.generate_images(
                             prompt=prompt_refinado,
