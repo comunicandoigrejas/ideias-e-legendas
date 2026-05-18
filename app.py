@@ -93,8 +93,8 @@ if st.session_state["usuario_logado"] is not None:
             st.success("Legenda pronta! Para copiar, basta clicar no ícone de duas folhas no canto superior direito do bloco abaixo:")
             st.code(st.session_state["legenda_gerada"], language="text")
             
-    # ------------------------------------------
-    # JANELA 2: CRIAÇÃO DA ARTE PRONTA
+   # ------------------------------------------
+    # JANELA 2: CRIAÇÃO DA ARTE PRONTA (CORRIGIDA)
     # ------------------------------------------
     with janela_arte:
         st.write("### Gerador de Imagens Integrado (Pronto para o Feed)")
@@ -111,33 +111,36 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Estilo moderno")
                         
-                        # Passo A: O Gemini de texto interpreta o DNA e cria o prompt perfeito com as cores oficiais
+                        # PASSO A: Usando o caminho completo e atualizado para evitar o Erro 404
                         modelo_prompt = genai.GenerativeModel(
-                            model_name="gemini-1.5-flash",
+                            model_name="models/gemini-1.5-flash-latest",
                             system_instruction=(
-                                f"Você é um designer. Converta a ideia em um prompt de imagem detalhado baseado neste DNA: '{dna_do_chat}'. "
+                                f"Você é um designer profissional. Converta a ideia em um prompt de imagem detalhado baseado neste DNA: '{dna_do_chat}'. "
                                 f"DIRETRIZ VISUAL OBRIGATÓRIA: A imagem DEVE focar nas tonalidades de azul, roxo, verde, laranja e amarelo. "
                                 f"Importante: Não coloque textos, letras ou palavras escritas dentro da imagem."
                             )
                         )
-                        prompt_refinado = modelo_prompt.generate_content(f"Refine o prompt visual para a ideia: {ideia_arte}").text
                         
-                        # Passo B: O Imagen 3 entra em ação e desenha a imagem real no formato quadrado 1:1
+                        # Gera o texto do prompt refinado
+                        resposta_prompt = modelo_prompt.generate_content(f"Refine o prompt visual para a ideia: {ideia_arte}")
+                        prompt_refinado = resposta_prompt.text
+                        
+                        # PASSO B: Chamada atualizada e segura do Imagen 3
                         modelo_imagem = genai.ImageGenerationModel("imagen-3.0-generate-002")
                         resultado = modelo_imagem.generate_images(
                             prompt=prompt_refinado,
                             number_of_images=1,
-                            aspect_ratio="1:1"  # Força o formato perfeito para o feed!
+                            aspect_ratio="1:1"  # Formato do Instagram
                         )
                         
-                        # Converte o resultado para exibição e download
+                        # Extrai e converte os bytes da imagem
                         imagem_bytes = resultado.images[0].image.bytes
                         
                         st.success("Glória a Deus! Arte criada com sucesso:")
                         # Mostra a imagem na tela
                         st.image(imagem_bytes, caption="Sua arte gerada (Proporção 1:1)", use_container_width=True)
                         
-                        # Botão para o cliente fazer o download do arquivo PNG limpo
+                        # Botão de Download
                         st.download_button(
                             label="📥 Baixar Imagem Pronta",
                             data=imagem_bytes,
@@ -149,8 +152,6 @@ if st.session_state["usuario_logado"] is not None:
                         st.error(f"Erro ao processar ou gerar a imagem: {e}")
             else:
                 st.warning("Por favor, digite qual é a ideia da imagem.")
-
-else:
     # ==========================================
     # 🔑 TELA DE LOGIN (SÓ APARECE SE NÃO ESTIVER LOGADO)
     # ==========================================
