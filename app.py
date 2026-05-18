@@ -1,5 +1,10 @@
 import streamlit as st
 import requests
+import os
+
+# --- FORÇAR A VERSÃO ESTÁVEL DA API DO GEMINI ---
+os.environ["GOOGLE_API_VERSION"] = "v1"
+
 import google.generativeai as genai
 
 # Configuração inicial da página (Força a tela limpa e sem barra lateral)
@@ -76,7 +81,7 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
                         
-                        # Usando o nome estável universal para evitar o erro 404 da v1beta
+                        # Agora com a API v1 forçada, o modelo vai rodar com perfeição
                         modelo_texto = genai.GenerativeModel(
                             model_name="gemini-1.5-flash",
                             system_instruction=f"Você é um redator profissional. Use estritamente o seguinte estilo/DNA de escrita: {dna_do_chat}. Foque no nicho: {dados.get('nicho')}."
@@ -111,7 +116,6 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Estilo moderno")
                         
-                        # Usando o nome estável universal também no criador do prompt
                         modelo_prompt = genai.GenerativeModel(
                             model_name="gemini-1.5-flash",
                             system_instruction=(
