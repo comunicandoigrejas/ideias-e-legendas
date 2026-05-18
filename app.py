@@ -38,8 +38,9 @@ if st.session_state["usuario_logado"] is not None:
     # ==========================================
     dados = st.session_state["usuario_logado"]
     
-    # Configura a IA do Google usando a chave API exclusiva deste cliente (Coluna F)
-    genai.configure(api_key=dados.get("api_key_user"))
+    # SÓ CONFIGURA A API KEY AQUI DENTRO (Evita que o app quebre ao abrir)
+    if dados.get("api_key_user"):
+        genai.configure(api_key=dados.get("api_key_user"))
     
     # Exibe o Nome do Cliente ACIMA do título do sistema
     st.write(f"✨ Cliente Ativo: **{dados.get('nome_exibicao', 'Varão')}**")
@@ -53,7 +54,7 @@ if st.session_state["usuario_logado"] is not None:
         
     st.divider()
     
-    # CREAÇÃO DAS JANELAS SEPARADAS (ABAS)
+    # CRIAÇÃO DAS JANELAS SEPARADAS (ABAS)
     janela_legenda, janela_arte = st.tabs(["📝 Criar Legenda", "🎨 Criar Arte"])
     
     # ------------------------------------------
@@ -75,9 +76,8 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
                         
-                        # Instancia o modelo de texto passando as instruções do Chat Pronto (DNA)
                         modelo_texto = genai.GenerativeModel(
-                            model_name="gemini-1.5-flash",
+                            model_name="models/gemini-1.5-flash-latest",
                             system_instruction=f"Você é um redator profissional. Use estritamente o seguinte estilo/DNA de escrita: {dna_do_chat}. Foque no nicho: {dados.get('nicho')}."
                         )
                         
@@ -88,13 +88,12 @@ if st.session_state["usuario_logado"] is not None:
             else:
                 st.warning("Por favor, digite o assunto da legenda antes de gerar.")
                 
-        # Se houver uma legenda já criada, exibe na tela com o botão de cópia nativo
         if st.session_state["legenda_gerada"]:
             st.success("Legenda pronta! Para copiar, basta clicar no ícone de duas folhas no canto superior direito do bloco abaixo:")
             st.code(st.session_state["legenda_gerada"], language="text")
             
-   # ------------------------------------------
-    # JANELA 2: CRIAÇÃO DA ARTE PRONTA (CORRIGIDA)
+    # ------------------------------------------
+    # JANELA 2: CRIAÇÃO DA ARTE PRONTA
     # ------------------------------------------
     with janela_arte:
         st.write("### Gerador de Imagens Integrado (Pronto para o Feed)")
@@ -106,12 +105,11 @@ if st.session_state["usuario_logado"] is not None:
         )
         
         if st.button("Gerar Imagem Pronta 📸", key="btn_gerar_arte"):
-            if ideia_arte.strip():
+            if id_arte := ideia_arte.strip():
                 with st.spinner("Processando estilo... O Gemini está gerando a sua arte real agora, aguarde..."):
                     try:
                         dna_do_chat = dados.get("dna", "Estilo moderno")
                         
-                        # PASSO A: Usando o caminho completo e atualizado para evitar o Erro 404
                         modelo_prompt = genai.GenerativeModel(
                             model_name="models/gemini-1.5-flash-latest",
                             system_instruction=(
@@ -121,26 +119,21 @@ if st.session_state["usuario_logado"] is not None:
                             )
                         )
                         
-                        # Gera o texto do prompt refinado
-                        resposta_prompt = modelo_prompt.generate_content(f"Refine o prompt visual para a ideia: {ideia_arte}")
+                        resposta_prompt = modelo_prompt.generate_content(f"Refine o prompt visual para a ideia: {id_arte}")
                         prompt_refinado = resposta_prompt.text
                         
-                        # PASSO B: Chamada atualizada e segura do Imagen 3
                         modelo_imagem = genai.ImageGenerationModel("imagen-3.0-generate-002")
                         resultado = modelo_imagem.generate_images(
                             prompt=prompt_refinado,
                             number_of_images=1,
-                            aspect_ratio="1:1"  # Formato do Instagram
+                            aspect_ratio="1:1"
                         )
                         
-                        # Extrai e converte os bytes da imagem
                         imagem_bytes = resultado.images[0].image.bytes
                         
                         st.success("Glória a Deus! Arte criada com sucesso:")
-                        # Mostra a imagem na tela
                         st.image(imagem_bytes, caption="Sua arte gerada (Proporção 1:1)", use_container_width=True)
                         
-                        # Botão de Download
                         st.download_button(
                             label="📥 Baixar Imagem Pronta",
                             data=imagem_bytes,
@@ -152,6 +145,8 @@ if st.session_state["usuario_logado"] is not None:
                         st.error(f"Erro ao processar ou gerar a imagem: {e}")
             else:
                 st.warning("Por favor, digite qual é a ideia da imagem.")
+
+else:
     # ==========================================
     # 🔑 TELA DE LOGIN (SÓ APARECE SE NÃO ESTIVER LOGADO)
     # ==========================================
@@ -170,18 +165,15 @@ if st.session_state["usuario_logado"] is not None:
                             "username": usuario_input.strip(),
                             "password": senha_input.strip()
                         }
-                        # Envia os dados para a sua planilha do Google
                         resposta = requests.post(SCRIPT_URL, json=payload)
                         
                         if resposta.status_code == 200:
                             resultado_servidor = resposta.json()
                             
-                            # Confere o retorno gerado pelo seu script doPost
                             if resultado_servidor.get("status") == "success":
-                                # Guarda o nome, nicho, dna e a api_key na sessão ativa do app
                                 st.session_state["usuario_logado"] = resultado_servidor
                                 st.success("Bênção! Acesso liberado.")
-                                st.rerun()  # Reinicia o app abrindo direto na tela de criação
+                                st.rerun()
                             else:
                                 erro_msg = resultado_servidor.get("message", "Credenciais inválidas")
                                 st.error(f"❌ Erro: {erro_msg}")
