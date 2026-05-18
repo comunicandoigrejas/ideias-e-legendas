@@ -1,120 +1,76 @@
 import streamlit as st
-from openai import OpenAI
 import google.generativeai as genai
-import time
-import requests
-import json
 
-# 1. CONFIGURAÇÕES DA PÁGINA
-st.set_page_config(page_title="Social Media Expert AI", page_icon="📸", layout="wide")
+# Garanta que o Gemini está configurado com a API Key do usuário que fez o login
+if "usuario_logado" in st.session_state:
+    genai.configure(api_key=st.session_state.usuario_logado["api_key_user"])
 
-# 2. INICIALIZAÇÃO DE SEGREDOS
-try:
-    SCRIPT_URL = st.secrets["URL_PLANILHA_SCRIPT"]
-    client_openai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    ASSISTANT_ID = st.secrets["ASSISTANT_ID"]
-except Exception as e:
-    st.error(f"Erro de Configuração: {e}")
-    st.stop()
-
-# 3. FUNÇÃO DE AUTENTICAÇÃO
-def autenticar_usuario(username, password):
-    payload = {"username": username, "password": password}
-    try:
-        response = requests.post(SCRIPT_URL, json=payload, allow_redirects=True, timeout=10)
-        return response.json()
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-# 4. LÓGICA DE LOGIN
-if "logado" not in st.session_state:
-    st.session_state.logado = False
-
-if not st.session_state.logado:
-    st.title("🙏 Login - Social Media Master")
-    with st.container(border=True):
-        u_input = st.text_input("Usuário")
-        p_input = st.text_input("Senha", type="password")
-        if st.button("Entrar no Sistema", use_container_width=True):
-            res = autenticar_usuario(u_input, p_input)
-            if res.get("status") == "success":
-                st.session_state.logado = True
-                st.session_state.user_data = res
-                st.rerun()
-            else:
-                st.error("Credenciais inválidas, varão! Verifique a planilha.")
-    st.stop()
-
-# --- INTERFACE PÓS-LOGIN ---
-user = st.session_state.user_data
-
-# Cabeçalho com Nome do Cliente e Botão de Sair
-col_nome, col_sair = st.columns([0.8, 0.2])
-with col_nome:
-    st.markdown(f"### 👤 {user['nome_exibicao']}")
-with col_sair:
-    if st.button("Sair do Aplicativo 🚪", use_container_width=True):
-        st.session_state.logado = False
-        st.session_state.user_data = None
-        st.rerun()
-
-st.title("🚀 Social Media Content Master")
-
-# DNA Personalizado
-with st.expander("🧬 DNA Personalizado", expanded=False):
-    dna_atual = st.text_area("Contexto da IA:", value=user['dna'], height=150)
-
-# FUNÇÃO DO AGENTE (OPENAI)
-def executar_agente(comando):
-    thread = client_openai.beta.threads.create()
-    client_openai.beta.threads.messages.create(
-        thread_id=thread.id,
-        role="user",
-        content=f"Contexto DNA: {dna_atual}. Regra: Se for igreja, use Bíblia ARA. Tarefa: {comando}"
-    )
-    run = client_openai.beta.threads.runs.create(thread_id=thread.id, assistant_id=ASSISTANT_ID)
-    with st.spinner("Processando..."):
-        while run.status != "completed":
-            time.sleep(0.5)
-            run = client_openai.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
-    msgs = client_openai.beta.threads.messages.list(thread_id=thread.id)
-    return msgs.data[0].content[0].text.value
-
-# ABAS DE CONTEÚDO
-tab1, tab2 = st.tabs(["✍️ Legendas", "🎨 Visual"])
-
-with tab1:
-    tema = st.text_input("Tema do Post:")
-    if st.button("Gerar Legenda ✨"):
-        # Gera a legenda com base no DNA e na Bíblia ARA
-        legenda_gerada = executar_agente(f"Crie uma legenda para Instagram sobre {tema}")
-        
-        st.write("### Legenda Gerada:")
-        # O componente st.code fornece o botão 'Copiar' automaticamente
-        st.code(legenda_gerada, language=None)
-        st.success("✅ Legenda pronta! Clique no ícone no canto superior direito do quadro acima para copiar.")
-
-with tab2:
-    ideia = st.text_input("Ideia para Imagem:")
-    if st.button("Gerar Prompt 🎨"):
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        # Mantém as cores da marca: azul, roxo, verde, laranja e amarelo
-        prompt_input = f"Crie um prompt 1:1 para IA de imagem. Cores: azul, roxo, verde, laranja e amarelo. Tema: {ideia}"
-        prompt_resultado = model.generate_content(prompt_input)
-        
-        st.write("### Prompt para a IA:")
-        st.code(prompt_resultado.text, language=None)
-        st.info("🎨 Prompt gerado com suas cores padrão. Clique no ícone acima para copiar.")
-
-# CSS para remover a barra lateral
-st.markdown(
+def gerar_imagem_com_gemini(ideia_usuario, dna_chat_pronto):
     """
-    <style>
-        section[data-testid="stSidebar"] {
-            display: none;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+    Usa o DNA do chat pronto do usuário para criar o prompt 
+    e depois gera a imagem real no formato 1:1.
+    """
+    try:
+        # PASSO 1: Usar o modelo de texto para processar a ideia baseada no "Chat Pronto" (DNA)
+        # Aqui passamos a instrução personalizada de cada usuário que vem da planilha
+        modelo_texto = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=(
+                f"Você é um especialista em criar prompts artísticos. Baseando-se rigorosamente neste "
+                f"estilo/DNA de chat pronto do usuário: '{dna_chat_pronto}', transforme a ideia enviada em um "
+                f"prompt de imagem detalhado e profissional. "
+                f"EXIGÊNCIA VISUAL: A imagem DEVE usar tons de azul, roxo, verde, laranja e amarelo. "
+                f"Não use texto escrito dentro da imagem."
+            )
+        )
+        
+        # O Gemini gera o prompt perfeito focado nas suas cores
+        resposta_prompt = modelo_texto.generate_content(f"Crie um prompt detalhado para a ideia: {ideia_usuario}")
+        prompt_final = resposta_prompt.text
+
+        # PASSO 2: Chamar o Imagen 3 para desenhar a imagem real
+        modelo_imagem = genai.ImageGenerationModel("imagen-3.0-generate-002")
+        resultado = modelo_imagem.generate_images(
+            prompt=prompt_final,
+            number_of_images=1,
+            aspect_ratio="1:1"  # Força o formato perfeito para o feed do Instagram
+        )
+        
+        # Retorna os bytes da imagem gerada
+        return resultado.images[0].image.bytes
+
+    except Exception as e:
+        st.error(f"Erro ao operar a geração da imagem: {e}")
+        return None
+
+# --- SUA TELA DE CRIAÇÃO DE IMAGEM ---
+st.title("📸 Gerador de Imagens Integrado")
+st.write(f"Bem-vindo, abençoado **{st.session_state.usuario_logado.get('nome_exibicao', 'Varão')}**!")
+
+# Input onde o usuário digita a ideia simples
+ideia = st.text_input("Qual ideia de imagem você quer que o Gemini crie hoje?")
+
+if st.button("Gerar Imagem Pronta ✨"):
+    if ideia:
+        with st.spinner("Aguarde, irmão... O Gemini está processando e gerando sua imagem pronta..."):
+            # Puxa a configuração do chat pronto (coluna D da sua planilha)
+            dna_do_usuario = st.session_state.usuario_logado.get("dna", "Estilo profissional e moderno")
+            
+            # Executa a função
+            imagem_bytes = gerar_imagem_com_gemini(ideia, dna_do_usuario)
+            
+            if imagem_bytes:
+                st.success("Bênção pura! Imagem gerada com sucesso:")
+                
+                # Exibe a imagem gerada direto na tela do App
+                st.image(imagem_bytes, caption="Sua imagem gerada (Proporção 1:1)", use_container_width=True)
+                
+                # Cria o botão para o cliente baixar o arquivo PNG pronto
+                st.download_button(
+                    label="📥 Baixar Imagem Pronta",
+                    data=imagem_bytes,
+                    file_name="post_instagram_pronto.png",
+                    mime="image/png"
+                )
+    else:
+        st.warning("Por favor, digite a ideia da imagem para que o sistema possa trabalhar.")
