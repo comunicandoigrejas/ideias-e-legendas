@@ -119,14 +119,23 @@ def gerar_conteudo(dados_usuario, tema_post):
     {cta}
 
     REGRAS:
-    - Criar legenda envolvente e persuasiva
+    - Criar conexão emocional
+    - Gerar retenção
+    - Gerar engajamento
     - Adaptar a linguagem ao nicho
-    - Ser totalmente fiel ao pedido do usuário
-    - Não inventar ingredientes ou produtos
-    - Não adicionar informações não mencionadas
-    - Inserir exatamente 5 hashtags relevantes
-    - Finalizar usando o CTA informado
+    - Criar a legenda com emojis relacionados ao tema
+    - Utilizar copy persuasiva
+    - Utilizar gatilhos mentais quando fizer sentido
+    - Finalizar com CTA forte, recomendando o pedido quando convenienete exemplo peça já a sua ou nos envie seu cardapio para um orçamento
+    - Inserir exatamente 5 hashtags no final da legenda
+    - Utilizar hashtags relevantes para o nicho
+    - Nunca inventar ingredientes, produtos ou informações não citadas pelo usuário
+    - Ser totalmente fiel ao pedido informado
+    - Não adicionar acompanhamentos que não foram mencionados
+    - Não modificar nomes de produtos
+    - Não criar informações fictícias
     """
+
 
     user_prompt = f"""
     Crie uma legenda para Instagram exatamente sobre:
