@@ -243,11 +243,13 @@ if st.session_state["usuario_logado"] is not None:
 
     st.divider()
 
-    # ==========================================
-    # RESULTADO
-    # ==========================================
+  # ==========================================
+# RESULTADO
+# ==========================================
+
 if st.session_state["resultado_final"]:
 
+    # BOTÃO LIMPAR
     if st.button("🗑️ Limpar Conteúdo"):
 
         st.session_state["resultado_final"] = ""
@@ -256,22 +258,22 @@ if st.session_state["resultado_final"]:
 
     st.write("### 📝 Conteúdo Gerado")
 
-        st.caption(
-            "Você pode editar o conteúdo abaixo antes de copiar."
-        )
+    st.caption(
+        "Você pode editar o conteúdo abaixo antes de copiar."
+    )
 
-        conteudo_editado = st.text_area(
-            label="Legenda final",
-            value=st.session_state["resultado_final"],
-            height=350,
-            key="caixa_resultado_final"
-        )
+    conteudo_editado = st.text_area(
+        label="Legenda final",
+        value=st.session_state["resultado_final"],
+        height=350,
+        key="caixa_resultado_final"
+    )
 
-        st.session_state["resultado_final"] = conteudo_editado
+    st.session_state["resultado_final"] = conteudo_editado
 
-        st.success(
-            "✅ Conteúdo gerado com sucesso."
-        )
+    st.success(
+        "✅ Conteúdo gerado com sucesso."
+    )
 
 # ==========================================
 # ÁREA DE LOGIN
