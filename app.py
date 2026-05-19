@@ -192,3 +192,4 @@ else:
                         st.error(f"Erro ao processar login: {e}")
             else:
                 st.warning("Por favor, preencha todos os campos de login.")
+                st.warning("Desenvolvido pr Comunicando Igrejas")
