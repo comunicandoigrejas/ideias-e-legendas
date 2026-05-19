@@ -255,24 +255,6 @@ if st.session_state["usuario_logado"] is not None:
                 "📋 Use o botão copy no canto da caixa abaixo"
             )
 
-        st.write("### 📝 Conteúdo Gerado")
-
-        st.code(
-            st.session_state["resultado_final"],
-            language=None
-        )
-
-        conteudo_editado = st.text_area(
-            label="Editar legenda",
-            value=st.session_state["resultado_final"],
-            height=300,
-            key="caixa_resultado_final"
-        )
-
-        st.session_state["resultado_final"] = conteudo_editado
-
-        st.success("✅ Conteúdo gerado com sucesso.")
-
 # ==========================================
 # ÁREA LOGIN
 # ==========================================
