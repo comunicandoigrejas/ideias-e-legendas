@@ -148,7 +148,7 @@ def gerar_conteudo(dados_usuario, tema_post):
     """
 
     user_prompt = f"""
-    Crie uma legenda para Instagram exatamente sobre o conteúdo abaixo, sem adicionar informações extras:
+    Crie uma legenda para Instagram sobre:
 
 {tema_post}
 
