@@ -1,6 +1,4 @@
 # app.py COMPLETO CORRIGIDO
-
-```python
 import streamlit as st
 import requests
 from openai import OpenAI
@@ -331,12 +329,3 @@ else:
                 )
 
     st.caption("Desenvolvido por Comunicando Igrejas")
-```
-
-# requirements.txt
-
-```txt
-streamlit
-openai
-requests
-```
