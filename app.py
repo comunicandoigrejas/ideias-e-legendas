@@ -34,16 +34,14 @@ else:
 # Inicializar as variáveis de sessão (gavetas de memória)
 if "usuario_logado" not in st.session_state:
     st.session_state["usuario_logado"] = None
-if "legenda_gerada" not in st.session_state:
-    st.session_state["legenda_gerada"] = ""
-if "hashtags_geradas" not in st.session_state:
-    st.session_state["hashtags_geradas"] = ""
+if "resultado_final" not in st.session_state:
+    st.session_state["resultado_final"] = ""
 
 # --- CONTROLE DE FLUXO DE TELAS ---
 
 if st.session_state["usuario_logado"] is not None:
     # ==========================================
-    # 🚀 TELA PRINCIPAL (APÓS LOGIN COM SUCESSO)
+    # 🚀 TELA PRINCIPAL (TELA ÚNICA INTEGRADA)
     # ==========================================
     dados = st.session_state["usuario_logado"]
     
@@ -54,101 +52,71 @@ if st.session_state["usuario_logado"] is not None:
     # Botão para Sair do Aplicativo
     if st.button("🚪 Sair do Aplicativo"):
         st.session_state["usuario_logado"] = None
-        st.session_state["legenda_gerada"] = ""
-        st.session_state["hashtags_geradas"] = ""
+        st.session_state["resultado_final"] = ""
         st.rerun()
         
     st.divider()
     
-    # CRIAÇÃO DAS JANELAS SEPARADAS (ABAS ATUALIZADAS)
-    janela_legenda, janela_hashtags = st.tabs(["📝 Criar Legenda", "#️⃣ Gerar Hashtags"])
+    st.write(f"### Gerador de Conteúdo Profissional")
+    st.caption(f"Nicho configurado para este perfil: **{dados.get('nicho', 'Geral')}**")
     
-    # ------------------------------------------
-    # JANELA 1: CRIAÇÃO DE LEGENDA
-    # ------------------------------------------
-    with janela_legenda:
-        st.write(f"### Gerador de Legendas Profissionais")
-        st.caption(f"Nicho configurado para este perfil: **{dados.get('nicho', 'Geral')}**")
-        
-        tema_legenda = st.text_area(
-            "Sobre qual assunto ou tema você deseja criar a sua legenda hoje, irmão?", 
-            placeholder="Ex: Aviso sobre o culto de jovens deste sábado ou promoção de doces gourmet...",
-            key="input_tema_legenda"
-        )
-        
-        if st.button("Gerar Legenda Abençoada ✨", key="btn_gerar_legenda"):
-            if tema_legenda.strip():
-                with st.spinner("A OpenAI está redigindo a sua legenda personalizada..."):
-                    try:
-                        dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
-                        
-                        resposta = client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=[
-                                {
-                                    "role": "system", 
-                                    "content": f"Você é um redator profissional. Use estritamente o seguinte estilo/DNA de escrita: {dna_do_chat}. Foque no nicho: {dados.get('nicho')}."
-                                },
-                                {
-                                    "role": "user", 
-                                    "content": f"Escreva uma legenda completa para post de Instagram sobre: {tema_legenda}"
-                                }
-                            ]
-                        )
-                        st.session_state["legenda_gerada"] = resposta.choices[0].message.content
-                    except Exception as e:
-                        st.error(f"Erro ao gerar a legenda na OpenAI: {e}")
-            else:
-                st.warning("Por favor, digite o assunto da legenda antes de gerar.")
-                
-        if st.session_state["legenda_gerada"]:
-            st.success("Legenda pronta! Para copiar, basta clicar no ícone de duas folhas no canto superior direito do bloco abaixo:")
-            st.code(st.session_state["legenda_gerada"], language="text")
+    # Campo de entrada para o tema do post
+    tema_post = st.text_area(
+        "Sobre qual assunto ou tema você deseja criar o seu post hoje, irmão?", 
+        placeholder="Ex: Aviso sobre o culto de jovens deste sábado ou promoção de doces gourmet...",
+        key="input_tema_post"
+    )
+    
+    if st.button("Gerar Conteúdo Completo ✨", key="btn_gerar_tudo"):
+        if tema_post.strip():
+            with st.spinner("A OpenAI está redigindo sua legenda e selecionando as hashtags..."):
+                try:
+                    dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
+                    
+                    # Chamada única para o GPT criar o texto e as tags juntos de forma harmoniosa
+                    resposta = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {
+                                "role": "system", 
+                                "content": (
+                                    f"Você é um redator e especialista em SEO profissional. "
+                                    f"Use estritamente o seguinte estilo/DNA de escrita: {dna_do_chat}. "
+                                    f"Foque no nicho: {dados.get('nicho')}. "
+                                    f"Instrução de formato: Escreva a legenda completa para o Instagram e, logo ao final dela, "
+                                    f"adicione uma seleção de 15 a 20 hashtags estratégicas (virais e nichadas) separadas por espaços."
+                                )
+                            },
+                            {
+                                "role": "user", 
+                                "content": f"Crie uma legenda e hashtags para um post sobre: {tema_post}"
+                            }
+                        ]
+                    )
+                    st.session_state["resultado_final"] = resposta.choices[0].message.content
+                except Exception as e:
+                    st.error(f"Erro ao processar na OpenAI: {e}")
+        else:
+            st.warning("Por favor, digite o assunto do post antes de gerar.")
             
-    # ------------------------------------------
-    # JANELA 2: CRIAÇÃO DE HASHTAGS
-    # ------------------------------------------
-    with janela_hashtags:
-        st.write("### Gerador de Hashtags Estratégicas")
-        st.caption(f"Nicho ativo: **{dados.get('nicho', 'Geral')}**")
+    st.divider()
+    
+    # Se já houver conteúdo gerado, exibe na caixa de texto para edição/cópia
+    if st.session_state["resultado_final"]:
+        st.write("### 📝 Legenda e Hashtags Prontas")
+        st.caption("Você pode editar ou ajustar o texto diretamente na caixa abaixo antes de copiar:")
         
-        tema_hashtags = st.text_input(
-            "Insira o tema ou palavras-chave do post para criar as melhores hashtags:",
-            placeholder="Ex: culto de libertação, confeitaria artesanal, bolo de festa...",
-            key="input_tema_hashtags"
+        # Caixa de texto editável com o conteúdo gerado
+        conteudo_editado = st.text_area(
+            label="Conteúdo final do post",
+            value=st.session_state["resultado_final"],
+            height=350,
+            key="caixa_resultado_final"
         )
         
-        if st.button("Gerar Hashtags 🚀", key="btn_gerar_hashtags"):
-            if tema_hashtags.strip():
-                with st.spinner("Selecionando as melhores tags para o seu engajamento..."):
-                    try:
-                        resposta_tags = client.chat.completions.create(
-                            model="gpt-4o-mini",
-                            messages=[
-                                {
-                                    "role": "system", 
-                                    "content": (
-                                        f"Você é um especialista em SEO e redes sociais. "
-                                        f"Gere uma seleção com as 15 a 20 melhores hashtags estratégicas (divididas entre virais, médias e nichadas) "
-                                        f"completamente focadas no nicho '{dados.get('nicho')}'. "
-                                        f"Entregue apenas as hashtags prontas, separadas por espaços, sem textos explicativos."
-                                    )
-                                },
-                                {
-                                    "role": "user", 
-                                    "content": f"Gere hashtags para o seguinte tema de post: {tema_hashtags}"
-                                }
-                            ]
-                        )
-                        st.session_state["hashtags_geradas"] = resposta_tags.choices[0].message.content
-                    except Exception as e:
-                        st.error(f"Erro ao gerar hashtags na OpenAI: {e}")
-            else:
-                st.warning("Por favor, informe o tema das hashtags.")
-                
-        if st.session_state["hashtags_geradas"]:
-            st.success("Hashtags geradas com sucesso! Copie no bloco abaixo:")
-            st.code(st.session_state["hashtags_geradas"], language="text")
+        # Atualiza a memória caso o usuário digite algo na caixa de texto
+        st.session_state["resultado_final"] = conteudo_editado
+        st.success("Glória a Deus! Tudo pronto. Basta selecionar o texto acima e copiar para o seu Instagram.")
 
 else:
     # ==========================================
@@ -172,7 +140,7 @@ else:
                         resposta = requests.post(SCRIPT_URL, json=payload)
                         
                         if resposta.status_code == 200:
-                            resultado_servidor = resposta.json()
+                            resultado_servidor = response_json = resposta.json()
                             
                             if resultado_servidor.get("status") == "success":
                                 st.session_state["usuario_logado"] = resultado_servidor
