@@ -182,10 +182,7 @@ if st.session_state["usuario_logado"] is not None:
 
     st.title("📸 Social Media Content Master")
 
-    # ==========================================
     # BOTÃO SAIR
-    # ==========================================
-
     if st.button("🚪 Sair do Aplicativo"):
 
         st.session_state["usuario_logado"] = None
@@ -201,20 +198,13 @@ if st.session_state["usuario_logado"] is not None:
         f"Nicho configurado: **{dados.get('nicho', 'Geral')}**"
     )
 
-    # ==========================================
-    # INPUT TEMA
-    # ==========================================
-
     tema_post = st.text_area(
         "Sobre qual assunto você deseja criar conteúdo hoje?",
         placeholder="Ex: culto de jovens, promoção de roupas, hamburguer artesanal...",
         key="input_tema_post"
     )
 
-    # ==========================================
     # GERAR CONTEÚDO
-    # ==========================================
-
     if st.button("Gerar Conteúdo Completo ✨"):
 
         if tema_post.strip():
@@ -244,40 +234,37 @@ if st.session_state["usuario_logado"] is not None:
 
     st.divider()
 
-  # ==========================================
-# RESULTADO
-# ==========================================
+    # RESULTADO
+    if st.session_state["resultado_final"]:
 
-if st.session_state["resultado_final"]:
+        # BOTÃO LIMPAR
+        if st.button("🗑️ Limpar Conteúdo"):
 
-    # BOTÃO LIMPAR
-    if st.button("🗑️ Limpar Conteúdo"):
+            st.session_state["resultado_final"] = ""
 
-        st.session_state["resultado_final"] = ""
+            st.rerun()
 
-        st.rerun()
+        st.write("### 📝 Conteúdo Gerado")
 
-    st.write("### 📝 Conteúdo Gerado")
+        st.caption(
+            "Você pode editar o conteúdo abaixo antes de copiar."
+        )
 
-    st.caption(
-        "Você pode editar o conteúdo abaixo antes de copiar."
-    )
+        conteudo_editado = st.text_area(
+            label="Legenda final",
+            value=st.session_state["resultado_final"],
+            height=350,
+            key="caixa_resultado_final"
+        )
 
-    conteudo_editado = st.text_area(
-        label="Legenda final",
-        value=st.session_state["resultado_final"],
-        height=350,
-        key="caixa_resultado_final"
-    )
+        st.session_state["resultado_final"] = conteudo_editado
 
-    st.session_state["resultado_final"] = conteudo_editado
-
-    st.success(
-        "✅ Conteúdo gerado com sucesso."
-    )
+        st.success(
+            "✅ Conteúdo gerado com sucesso."
+        )
 
 # ==========================================
-# ÁREA DE LOGIN
+# ÁREA LOGIN
 # ==========================================
 
 else:
@@ -301,9 +288,7 @@ else:
 
             if usuario_input.strip() and senha_input.strip():
 
-                with st.spinner(
-                    "Autenticando..."
-                ):
+                with st.spinner("Autenticando..."):
 
                     try:
 
