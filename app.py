@@ -36,6 +36,8 @@ if "usuario_logado" not in st.session_state:
     st.session_state["usuario_logado"] = None
 if "legenda_gerada" not in st.session_state:
     st.session_state["legenda_gerada"] = ""
+if "hashtags_geradas" not in st.session_state:
+    st.session_state["hashtags_geradas"] = ""
 
 # --- CONTROLE DE FLUXO DE TELAS ---
 
@@ -53,15 +55,16 @@ if st.session_state["usuario_logado"] is not None:
     if st.button("🚪 Sair do Aplicativo"):
         st.session_state["usuario_logado"] = None
         st.session_state["legenda_gerada"] = ""
+        st.session_state["hashtags_geradas"] = ""
         st.rerun()
         
     st.divider()
     
-    # CRIAÇÃO DAS JANELAS SEPARADAS (ABAS)
-    janela_legenda, janela_arte = st.tabs(["📝 Criar Legenda", "🎨 Criar Arte"])
+    # CRIAÇÃO DAS JANELAS SEPARADAS (ABAS ATUALIZADAS)
+    janela_legenda, janela_hashtags = st.tabs(["📝 Criar Legenda", "#️⃣ Gerar Hashtags"])
     
     # ------------------------------------------
-    # JANELA 1: CRIAÇÃO DE LEGENDA (OPENAI VIA SECRETS)
+    # JANELA 1: CRIAÇÃO DE LEGENDA
     # ------------------------------------------
     with janela_legenda:
         st.write(f"### Gerador de Legendas Profissionais")
@@ -79,7 +82,6 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
                         
-                        # Chamada do modelo utilizando a estrutura segura
                         resposta = client.chat.completions.create(
                             model="gpt-4o-mini",
                             messages=[
@@ -104,56 +106,49 @@ if st.session_state["usuario_logado"] is not None:
             st.code(st.session_state["legenda_gerada"], language="text")
             
     # ------------------------------------------
-    # JANELA 2: CRIAÇÃO DA ARTE PRONTA (DALL-E 3 VIA SECRETS)
+    # JANELA 2: CRIAÇÃO DE HASHTAGS
     # ------------------------------------------
-    with janela_arte:
-        st.write("### Gerador de Imagens Integrado (Pronto para o Feed)")
-        st.caption("As imagens são geradas automaticamente no formato quadrado (1:1) para o Instagram.")
+    with janela_hashtags:
+        st.write("### Gerador de Hashtags Estratégicas")
+        st.caption(f"Nicho ativo: **{dados.get('nicho', 'Geral')}**")
         
-        ideia_arte = st.text_input(
-            "Digite a ideia da imagem que você quer que a Inteligência Artificial entregue pronta:",
-            key="input_ideia_arte"
+        tema_hashtags = st.text_input(
+            "Insira o tema ou palavras-chave do post para criar as melhores hashtags:",
+            placeholder="Ex: culto de libertação, confeitaria artesanal, bolo de festa...",
+            key="input_tema_hashtags"
         )
         
-        if st.button("Gerar Imagem Pronta 📸", key="btn_gerar_arte"):
-            if id_arte := ideia_arte.strip():
-                with st.spinner("A OpenAI está gerando a sua arte real agora através do DALL-E 3, aguarde..."):
+        if st.button("Gerar Hashtags 🚀", key="btn_gerar_hashtags"):
+            if tema_hashtags.strip():
+                with st.spinner("Selecionando as melhores tags para o seu engajamento..."):
                     try:
-                        dna_do_chat = dados.get("dna", "Estilo moderno")
-                        
-                        # Injeção das regras de cores do seu grupo/marca
-                        prompt_completo = (
-                            f"Crie uma imagem de alta qualidade baseada no estilo: '{dna_do_chat}'. "
-                            f"Ideia central: {id_arte}. "
-                            f"DIRETRIZ VISUAL OBRIGATÓRIA: A imagem deve focar fortemente nas tonalidades de azul, roxo, verde, laranja e amarelo. "
-                            f"Importante: Não adicione nenhum tipo de texto, letras, frases ou palavras escritas dentro da imagem."
+                        resposta_tags = client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            messages=[
+                                {
+                                    "role": "system", 
+                                    "content": (
+                                        f"Você é um especialista em SEO e redes sociais. "
+                                        f"Gere uma seleção com as 15 a 20 melhores hashtags estratégicas (divididas entre virais, médias e nichadas) "
+                                        f"completamente focadas no nicho '{dados.get('nicho')}'. "
+                                        f"Entregue apenas as hashtags prontas, separadas por espaços, sem textos explicativos."
+                                    )
+                                },
+                                {
+                                    "role": "user", 
+                                    "content": f"Gere hashtags para o seguinte tema de post: {tema_hashtags}"
+                                }
+                            ]
                         )
-                        
-                        resposta_imagem = client.images.generate(
-                            model="dall-e-3",
-                            prompt=prompt_completo,
-                            size="1024x1024",  # Formato 1:1 exato para o feed do Instagram
-                            quality="standard",
-                            n=1,
-                        )
-                        
-                        url_imagem = resposta_imagem.data[0].url
-                        img_bytes = requests.get(url_imagem).content
-                        
-                        st.success("Glória a Deus! Arte criada com sucesso:")
-                        st.image(img_bytes, caption="Sua arte gerada pela OpenAI (Proporção 1:1)", use_container_width=True)
-                        
-                        st.download_button(
-                            label="📥 Baixar Imagem Pronta",
-                            data=img_bytes,
-                            file_name="arte_openai_social_media.png",
-                            mime="image/png",
-                            key="btn_download_arte"
-                        )
+                        st.session_state["hashtags_geradas"] = resposta_tags.choices[0].message.content
                     except Exception as e:
-                        st.error(f"Erro ao gerar a imagem na OpenAI: {e}")
+                        st.error(f"Erro ao gerar hashtags na OpenAI: {e}")
             else:
-                st.warning("Por favor, digite qual é a ideia da imagem.")
+                st.warning("Por favor, informe o tema das hashtags.")
+                
+        if st.session_state["hashtags_geradas"]:
+            st.success("Hashtags geradas com sucesso! Copie no bloco abaixo:")
+            st.code(st.session_state["hashtags_geradas"], language="text")
 
 else:
     # ==========================================
