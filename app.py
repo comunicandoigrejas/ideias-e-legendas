@@ -138,14 +138,19 @@ def gerar_conteudo(dados_usuario, tema_post):
     - Utilizar copy persuasiva
     - Utilizar gatilhos mentais quando fizer sentido
     - Finalizar com CTA forte
-    - Gerar de 15 a 20 hashtags estratégicas
-    - Misturar hashtags virais e nichadas
-    - Não usar hashtags genéricas demais
-    - Separar hashtags no final da legenda
+    - Inserir exatamente 5 hashtags no final da legenda
+    - Utilizar hashtags relevantes para o nicho
+    - Nunca inventar ingredientes, produtos ou informações não citadas pelo usuário
+    - Ser totalmente fiel ao pedido informado
+    - Não adicionar acompanhamentos que não foram mencionados
+    - Não modificar nomes de produtos
+    - Não criar informações fictícias
     """
 
     user_prompt = f"""
-    Crie uma legenda completa para Instagram sobre:
+    Crie uma legenda para Instagram exatamente sobre o conteúdo abaixo, sem adicionar informações extras:
+
+{tema_post}
 
     {tema_post}
     """
@@ -241,10 +246,15 @@ if st.session_state["usuario_logado"] is not None:
     # ==========================================
     # RESULTADO
     # ==========================================
+if st.session_state["resultado_final"]:
 
-    if st.session_state["resultado_final"]:
+    if st.button("🗑️ Limpar Conteúdo"):
 
-        st.write("### 📝 Conteúdo Gerado")
+        st.session_state["resultado_final"] = ""
+
+        st.rerun()
+
+    st.write("### 📝 Conteúdo Gerado")
 
         st.caption(
             "Você pode editar o conteúdo abaixo antes de copiar."
