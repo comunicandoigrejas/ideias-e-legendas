@@ -1,3 +1,6 @@
+# app.py COMPLETO CORRIGIDO
+
+```python
 import streamlit as st
 import requests
 from openai import OpenAI
@@ -12,8 +15,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Remove sidebar completamente
-st.markdown("""
+# ==========================================
+# ESCONDER SIDEBAR
+# ==========================================
+
+st.markdown(
+    """
     <style>
         [data-testid="stSidebar"] {
             display: none !important;
@@ -23,25 +30,27 @@ st.markdown("""
             display: none !important;
         }
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
 # ==========================================
 # VERIFICAÇÃO DOS SECRETS
 # ==========================================
 
-if "URL_PLANILHA_SCRIPT" in st.secrets:
-    SCRIPT_URL = st.secrets["URL_PLANILHA_SCRIPT"]
-else:
-    st.error("⚠️ Chave URL_PLANILHA_SCRIPT não encontrada.")
+if "URL_PLANILHA_SCRIPT" not in st.secrets:
+    st.error("⚠️ URL_PLANILHA_SCRIPT não encontrada nos secrets.")
     st.stop()
 
-if "OPENAI_API_KEY" in st.secrets:
-    client = OpenAI(
-        api_key=st.secrets["OPENAI_API_KEY"]
-    )
-else:
-    st.error("⚠️ Chave OPENAI_API_KEY não encontrada.")
+if "OPENAI_API_KEY" not in st.secrets:
+    st.error("⚠️ OPENAI_API_KEY não encontrada nos secrets.")
     st.stop()
+
+SCRIPT_URL = st.secrets["URL_PLANILHA_SCRIPT"]
+
+client = OpenAI(
+    api_key=st.secrets["OPENAI_API_KEY"]
+)
 
 # ==========================================
 # SESSION STATE
@@ -54,27 +63,22 @@ if "resultado_final" not in st.session_state:
     st.session_state["resultado_final"] = ""
 
 # ==========================================
-# FUNÇÃO DE GERAÇÃO COM RESPONSES API
+# FUNÇÃO GERAR CONTEÚDO
 # ==========================================
+
 
 def gerar_conteudo(dados_usuario, tema_post):
 
     dna = dados_usuario.get(
         "dna",
-        "Escreva de forma moderna e envolvente"
+        "Escreva de forma envolvente e estratégica"
     )
 
     nicho = dados_usuario.get(
         "nicho",
-        "Marketing Digital"
+        "Marketing"
     )
 
-    nome_cliente = dados_usuario.get(
-        "nome_exibicao",
-        "Cliente"
-    )
-
-    # Campos futuros já preparados
     tom = dados_usuario.get(
         "tom",
         "Profissional"
@@ -92,27 +96,16 @@ def gerar_conteudo(dados_usuario, tema_post):
 
     cta = dados_usuario.get(
         "cta",
-        "Comente sua opinião."
+        "Clique no link da bio"
     )
 
-    # ==========================================
-    # PROMPT DO AGENTE
-    # ==========================================
-
     system_prompt = f"""
-    Você é um especialista profissional em:
-    - copywriting
-    - marketing digital
-    - SEO para redes sociais
-    - criação de legendas virais
-
-    CLIENTE:
-    {nome_cliente}
+    Você é especialista em criação de legendas para redes sociais.
 
     NICHO:
     {nicho}
 
-    DNA DE ESCRITA:
+    DNA:
     {dna}
 
     TOM:
@@ -124,41 +117,24 @@ def gerar_conteudo(dados_usuario, tema_post):
     PÚBLICO:
     {publico}
 
-    CTA PADRÃO:
+    CTA:
     {cta}
 
-    SUA MISSÃO:
-    Criar legendas altamente profissionais para Instagram.
-
     REGRAS:
-    - Criar conexão emocional
-    - Gerar retenção
-    - Gerar engajamento
+    - Criar legenda envolvente e persuasiva
     - Adaptar a linguagem ao nicho
-    - Criar a legenda com emojis relacionados ao tema
-    - Utilizar copy persuasiva
-    - Utilizar gatilhos mentais quando fizer sentido
-    - Finalizar com CTA forte, recomendando o pedido quando convenienete exemplo peça já a sua ou nos envie seu cardapio para um orçamento
-    - Inserir exatamente 5 hashtags no final da legenda
-    - Utilizar hashtags relevantes para o nicho
-    - Nunca inventar ingredientes, produtos ou informações não citadas pelo usuário
-    - Ser totalmente fiel ao pedido informado
-    - Não adicionar acompanhamentos que não foram mencionados
-    - Não modificar nomes de produtos
-    - Não criar informações fictícias
+    - Ser totalmente fiel ao pedido do usuário
+    - Não inventar ingredientes ou produtos
+    - Não adicionar informações não mencionadas
+    - Inserir exatamente 5 hashtags relevantes
+    - Finalizar usando o CTA informado
     """
 
     user_prompt = f"""
-    Crie uma legenda para Instagram sobre:
-
-{tema_post}
+    Crie uma legenda para Instagram exatamente sobre:
 
     {tema_post}
     """
-
-    # ==========================================
-    # CHAMADA OPENAI - RESPONSES API
-    # ==========================================
 
     resposta = client.responses.create(
         model="gpt-4.1-mini",
@@ -168,6 +144,7 @@ def gerar_conteudo(dados_usuario, tema_post):
 
     return resposta.output_text
 
+
 # ==========================================
 # ÁREA LOGADA
 # ==========================================
@@ -176,13 +153,20 @@ if st.session_state["usuario_logado"] is not None:
 
     dados = st.session_state["usuario_logado"]
 
-    st.write(
-        f"✨ Cliente Ativo: **{dados.get('nome_exibicao', 'Cliente')}**"
-    )
-
     st.title("📸 Social Media Content Master")
 
+    st.success(
+        f"Cliente ativo: {dados.get('nome_exibicao', 'Cliente')}"
+    )
+
+    st.caption(
+        f"Nicho configurado: {dados.get('nicho', 'Geral')}"
+    )
+
+    # ==========================================
     # BOTÃO SAIR
+    # ==========================================
+
     if st.button("🚪 Sair do Aplicativo"):
 
         st.session_state["usuario_logado"] = None
@@ -192,20 +176,21 @@ if st.session_state["usuario_logado"] is not None:
 
     st.divider()
 
-    st.write("### Gerador de Conteúdo Profissional")
-
-    st.caption(
-        f"Nicho configurado: **{dados.get('nicho', 'Geral')}**"
-    )
+    # ==========================================
+    # INPUT TEMA
+    # ==========================================
 
     tema_post = st.text_area(
-        "Sobre qual assunto você deseja criar conteúdo hoje?",
+        "Sobre qual assunto deseja criar a legenda?",
         placeholder="Ex: Marmita de frango com batata doce",
-        key="input_tema_post"
+        height=120
     )
 
-    # GERAR CONTEÚDO
-    if st.button("Gerar Conteúdo Completo ✨"):
+    # ==========================================
+    # BOTÃO GERAR
+    # ==========================================
+
+    if st.button("✨ Gerar Conteúdo"):
 
         if tema_post.strip():
 
@@ -219,6 +204,8 @@ if st.session_state["usuario_logado"] is not None:
                     )
 
                     st.session_state["resultado_final"] = resultado
+
+                    st.rerun()
 
                 except Exception as e:
 
@@ -234,12 +221,14 @@ if st.session_state["usuario_logado"] is not None:
 
     st.divider()
 
+    # ==========================================
     # RESULTADO
+    # ==========================================
+
     if st.session_state["resultado_final"]:
 
-        col1, col2 = st.columns([1,1])
+        col1, col2 = st.columns(2)
 
-        # BOTÃO LIMPAR
         with col1:
 
             if st.button("🗑️ Limpar Conteúdo"):
@@ -248,12 +237,22 @@ if st.session_state["usuario_logado"] is not None:
 
                 st.rerun()
 
-        # AVISO COPY
         with col2:
 
             st.caption(
-                "📋 Use o botão copy no canto da caixa abaixo"
+                "📋 Use o botão copy no canto superior da caixa"
             )
+
+        st.write("### 📝 Conteúdo Gerado")
+
+        st.code(
+            st.session_state["resultado_final"],
+            language=None
+        )
+
+        st.success(
+            "✅ Conteúdo gerado com sucesso"
+        )
 
 # ==========================================
 # ÁREA LOGIN
@@ -309,7 +308,7 @@ else:
                                 st.error(
                                     resultado_servidor.get(
                                         "message",
-                                        "Credenciais inválidas"
+                                        "Usuário ou senha inválidos"
                                     )
                                 )
 
@@ -321,12 +320,23 @@ else:
 
                     except Exception as e:
 
-                        st.error(f"Erro no login: {e}")
+                        st.error(
+                            f"Erro no login: {e}"
+                        )
 
             else:
 
                 st.warning(
-                    "Preencha usuário e senha."
+                    "Preencha usuário e senha"
                 )
 
     st.caption("Desenvolvido por Comunicando Igrejas")
+```
+
+# requirements.txt
+
+```txt
+streamlit
+openai
+requests
+```
