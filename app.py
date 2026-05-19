@@ -161,7 +161,7 @@ def gerar_conteudo(dados_usuario, tema_post):
     # ==========================================
 
     resposta = client.responses.create(
-        model="gpt-5-mini",
+        model="gpt-4.1-mini",
         instructions=system_prompt,
         input=user_prompt
     )
@@ -200,7 +200,7 @@ if st.session_state["usuario_logado"] is not None:
 
     tema_post = st.text_area(
         "Sobre qual assunto você deseja criar conteúdo hoje?",
-        placeholder="Ex: culto de jovens, promoção de roupas, hamburguer artesanal...",
+        placeholder="Ex: Marmita de frango com batata doce",
         key="input_tema_post"
     )
 
@@ -209,7 +209,7 @@ if st.session_state["usuario_logado"] is not None:
 
         if tema_post.strip():
 
-            with st.spinner("A IA está criando seu conteúdo..."):
+            with st.spinner("Gerando legenda..."):
 
                 try:
 
@@ -234,42 +234,44 @@ if st.session_state["usuario_logado"] is not None:
 
     st.divider()
 
-   # RESULTADO
-if st.session_state["resultado_final"]:
+    # RESULTADO
+    if st.session_state["resultado_final"]:
 
-    col1, col2 = st.columns([1,1])
+        col1, col2 = st.columns([1,1])
 
-    # BOTÃO LIMPAR
-    with col1:
+        # BOTÃO LIMPAR
+        with col1:
 
-        if st.button("🗑️ Limpar Conteúdo"):
+            if st.button("🗑️ Limpar Conteúdo"):
 
-            st.session_state["resultado_final"] = ""
+                st.session_state["resultado_final"] = ""
 
-            st.rerun()
+                st.rerun()
 
-    # BOTÃO COPIAR
-    with col2:
+        # AVISO COPY
+        with col2:
 
-        st.caption("📋 Use o botão copy no canto da caixa abaixo")
+            st.caption(
+                "📋 Use o botão copy no canto da caixa abaixo"
+            )
 
-    st.write("### 📝 Conteúdo Gerado")
+        st.write("### 📝 Conteúdo Gerado")
 
-    st.code(
-        st.session_state["resultado_final"],
-        language=None
-    )
+        st.code(
+            st.session_state["resultado_final"],
+            language=None
+        )
 
-    conteudo_editado = st.text_area(
-        label="Editar legenda",
-        value=st.session_state["resultado_final"],
-        height=350,
-        key="caixa_resultado_final"
-    )
+        conteudo_editado = st.text_area(
+            label="Editar legenda",
+            value=st.session_state["resultado_final"],
+            height=300,
+            key="caixa_resultado_final"
+        )
 
-    st.session_state["resultado_final"] = conteudo_editado
+        st.session_state["resultado_final"] = conteudo_editado
 
-    st.success("✅ Conteúdo gerado com sucesso.")
+        st.success("✅ Conteúdo gerado com sucesso.")
 
 # ==========================================
 # ÁREA LOGIN
@@ -318,34 +320,26 @@ else:
 
                                 st.session_state["usuario_logado"] = resultado_servidor
 
-                                st.success(
-                                    "✅ Login realizado com sucesso."
-                                )
-
                                 st.rerun()
 
                             else:
 
-                                erro_msg = resultado_servidor.get(
-                                    "message",
-                                    "Credenciais inválidas"
-                                )
-
                                 st.error(
-                                    f"❌ {erro_msg}"
+                                    resultado_servidor.get(
+                                        "message",
+                                        "Credenciais inválidas"
+                                    )
                                 )
 
                         else:
 
                             st.error(
-                                f"Erro servidor Google Sheets ({resposta.status_code})"
+                                f"Erro servidor ({resposta.status_code})"
                             )
 
                     except Exception as e:
 
-                        st.error(
-                            f"Erro no login: {e}"
-                        )
+                        st.error(f"Erro no login: {e}")
 
             else:
 
