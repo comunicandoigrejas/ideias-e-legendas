@@ -138,7 +138,7 @@ def gerar_conteudo(dados_usuario, tema_post):
     - Criar a legenda com emojis relacionados ao tema
     - Utilizar copy persuasiva
     - Utilizar gatilhos mentais quando fizer sentido
-    - Finalizar com CTA forte
+    - Finalizar com CTA forte, recomendando o pedido quando convenienete exemplo peça já a sua ou nos envie seu cardapio para um orçamento
     - Inserir exatamente 5 hashtags no final da legenda
     - Utilizar hashtags relevantes para o nicho
     - Nunca inventar ingredientes, produtos ou informações não citadas pelo usuário
