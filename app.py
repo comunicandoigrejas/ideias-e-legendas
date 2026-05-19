@@ -1,4 +1,3 @@
-# app.py COMPLETO CORRIGIDO
 import streamlit as st
 import requests
 from openai import OpenAI
@@ -23,9 +22,11 @@ st.markdown(
         [data-testid="stSidebar"] {
             display: none !important;
         }
-
         [data-testid="collapsedSidebarNoContent"] {
             display: none !important;
+        }
+        .stCodeBlock {
+            white-space: pre-wrap;
         }
     </style>
     """,
@@ -46,9 +47,7 @@ if "OPENAI_API_KEY" not in st.secrets:
 
 SCRIPT_URL = st.secrets["URL_PLANILHA_SCRIPT"]
 
-client = OpenAI(
-    api_key=st.secrets["OPENAI_API_KEY"]
-)
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # ==========================================
 # SESSION STATE
@@ -61,95 +60,60 @@ if "resultado_final" not in st.session_state:
     st.session_state["resultado_final"] = ""
 
 # ==========================================
-# FUNÇÃO GERAR CONTEÚDO
+# FUNÇÃO GERAR CONTEÚDO (APROVADA)
 # ==========================================
 
-
 def gerar_conteudo(dados_usuario, tema_post):
+    if not tema_post or not tema_post.strip():
+        return "❌ Por favor, insira um tema para gerar a legenda."
 
-    dna = dados_usuario.get(
-        "dna",
-        "Escreva de forma envolvente e estratégica"
-    )
-
-    nicho = dados_usuario.get(
-        "nicho",
-        "Marketing"
-    )
-
-    tom = dados_usuario.get(
-        "tom",
-        "Profissional"
-    )
-
-    objetivo = dados_usuario.get(
-        "objetivo",
-        "Gerar engajamento"
-    )
-
-    publico = dados_usuario.get(
-        "publico",
-        "Público geral"
-    )
-
-    cta = dados_usuario.get(
-        "cta",
-        "Clique no link da bio"
-    )
+    dna = dados_usuario.get("dna", "Escreva de forma envolvente e estratégica")
+    nicho = dados_usuario.get("nicho", "Marketing")
+    tom = dados_usuario.get("tom", "Profissional")
+    objetivo = dados_usuario.get("objetivo", "Gerar engajamento")
+    publico = dados_usuario.get("publico", "Público geral")
+    cta = dados_usuario.get("cta", "Clique no link da bio")
 
     system_prompt = f"""
-    Você é especialista em criação de legendas para redes sociais.
+    Você é um especialista em copywriting para Instagram, focado em legenda persuasivas e de alto engajamento.
 
-    NICHO:
-    {nicho}
+    NICHO: {nicho}
+    DNA DA MARCA: {dna}
+    TOM DE VOZ: {tom}
+    OBJETIVO: {objetivo}
+    PÚBLICO-ALVO: {publico}
+    CTA PADRÃO: {cta}
 
-    DNA:
-    {dna}
-
-    TOM:
-    {tom}
-
-    OBJETIVO:
-    {objetivo}
-
-    PÚBLICO:
-    {publico}
-
-    CTA:
-    {cta}
-
-    REGRAS:
-    - Criar conexão emocional
-    - Gerar retenção
-    - Gerar engajamento
-    - Adaptar a linguagem ao nicho
-    - Criar a legenda com emojis relacionados ao tema
-    - Utilizar copy persuasiva
-    - Utilizar gatilhos mentais quando fizer sentido
-    - Finalizar com CTA forte, recomendando o pedido quando convenienete exemplo peça já a sua ou nos envie seu cardapio para um orçamento
-    - Inserir exatamente 5 hashtags no final da legenda
-    - Utilizar hashtags relevantes para o nicho
-    - Nunca inventar ingredientes, produtos ou informações não citadas pelo usuário
-    - Ser totalmente fiel ao pedido informado
-    - Não adicionar acompanhamentos que não foram mencionados
-    - Não modificar nomes de produtos
-    - Não criar informações fictícias
+    REGRAS OBRIGATÓRIAS:
+    - Escreva em português brasileiro natural e fluido
+    - Crie conexão emocional com o público
+    - Use no máximo 3-4 emojis relevantes
+    - Utilize gatilhos mentais quando fizer sentido
+    - Seja fiel ao tema informado pelo usuário
+    - Nunca invente ingredientes, preços, nomes ou informações
+    - Finalize sempre com um CTA forte
+    - Insira exatamente 5 hashtags relevantes no final
+    - Mantenha a legenda atrativa, escaneável e persuasiva
     """
 
-
     user_prompt = f"""
-    Crie uma legenda para Instagram exatamente sobre:
+    Crie uma legenda para Instagram exatamente sobre o seguinte tema:
 
     {tema_post}
     """
 
-    resposta = client.responses.create(
-        model="gpt-4.1-mini",
-        instructions=system_prompt,
-        input=user_prompt
-    )
+    try:
+        resposta = client.responses.create(
+            model="gpt-4.1-mini",
+            instructions=system_prompt,
+            input=user_prompt,
+            temperature=0.75,
+            max_output_tokens=800
+        )
+        return resposta.output_text.strip()
 
-    return resposta.output_text
+    except Exception as e:
+        raise Exception(f"Erro na API OpenAI: {str(e)}")
 
 
 # ==========================================
@@ -161,135 +125,75 @@ if st.session_state["usuario_logado"] is not None:
     dados = st.session_state["usuario_logado"]
 
     st.title("📸 Social Media Content Master")
+    st.success(f"✅ Cliente ativo: **{dados.get('nome_exibicao', 'Cliente')}**")
+    st.caption(f"📌 Nicho: **{dados.get('nicho', 'Não configurado')}**")
 
-    st.success(
-        f"Cliente ativo: {dados.get('nome_exibicao', 'Cliente')}"
-    )
-
-    st.caption(
-        f"Nicho configurado: {dados.get('nicho', 'Geral')}"
-    )
-
-    # ==========================================
-    # BOTÃO SAIR
-    # ==========================================
-
+    # Botão Sair
     if st.button("🚪 Sair do Aplicativo"):
-
         st.session_state["usuario_logado"] = None
         st.session_state["resultado_final"] = ""
-
         st.rerun()
 
     st.divider()
 
-    # ==========================================
-    # INPUT TEMA
-    # ==========================================
-
+    # Input do Tema
     tema_post = st.text_area(
         "Sobre qual assunto deseja criar a legenda?",
-        placeholder="Ex: Marmita de frango com batata doce",
-        height=120
+        placeholder="Ex: Marmita fit de frango grelhado com batata doce e brócolis (300g)",
+        height=140,
+        max_chars=600
     )
 
-    # ==========================================
-    # BOTÃO GERAR
-    # ==========================================
-
-    if st.button("✨ Gerar Conteúdo"):
-
+    # Botão Gerar
+    if st.button("✨ Gerar Legenda", type="primary", use_container_width=True):
         if tema_post.strip():
-
-            with st.spinner("Gerando legenda..."):
-
+            with st.spinner("Gerando legenda com IA..."):
                 try:
-
-                    resultado = gerar_conteudo(
-                        dados,
-                        tema_post
-                    )
-
+                    resultado = gerar_conteudo(dados, tema_post)
                     st.session_state["resultado_final"] = resultado
-
                     st.rerun()
-
                 except Exception as e:
-
-                    st.error(
-                        f"Erro ao gerar conteúdo: {e}"
-                    )
-
+                    st.error(f"❌ Erro ao gerar conteúdo: {str(e)}")
         else:
-
-            st.warning(
-                "Digite um tema antes de gerar."
-            )
+            st.warning("⚠️ Digite o tema da legenda antes de gerar.")
 
     st.divider()
 
-    # ==========================================
-    # RESULTADO
-    # ==========================================
-
+    # Resultado
     if st.session_state["resultado_final"]:
-
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1, 3])
 
         with col1:
-
-            if st.button("🗑️ Limpar Conteúdo"):
-
+            if st.button("🗑️ Limpar"):
                 st.session_state["resultado_final"] = ""
-
                 st.rerun()
 
         with col2:
+            st.caption("📋 Clique no botão de copiar no canto superior direito da caixa")
 
-            st.caption(
-                "📋 Use o botão copy no canto superior da caixa"
-            )
+        st.subheader("📝 Legenda Gerada")
+        st.code(st.session_state["resultado_final"], language=None)
 
-        st.write("### 📝 Conteúdo Gerado")
-
-        st.code(
-            st.session_state["resultado_final"],
-            language=None
-        )
-
-        st.success(
-            "✅ Conteúdo gerado com sucesso"
-        )
+        st.success("✅ Legenda gerada com sucesso!")
 
 # ==========================================
-# ÁREA LOGIN
+# ÁREA DE LOGIN
 # ==========================================
 
 else:
-
     st.title("🔑 Social Media Content Master")
+    st.markdown("### Faça login para continuar")
 
     with st.form("formulario_login"):
+        usuario_input = st.text_input("👤 Usuário", placeholder="Digite seu usuário")
+        senha_input = st.text_input("🔒 Senha", type="password", placeholder="Digite sua senha")
 
-        usuario_input = st.text_input("Usuário")
-
-        senha_input = st.text_input(
-            "Senha",
-            type="password"
-        )
-
-        botao_entrar = st.form_submit_button(
-            "Entrar no Sistema"
-        )
+        botao_entrar = st.form_submit_button("Entrar no Sistema", use_container_width=True)
 
         if botao_entrar:
-
             if usuario_input.strip() and senha_input.strip():
-
                 with st.spinner("Autenticando..."):
-
                     try:
-
                         payload = {
                             "username": usuario_input.strip(),
                             "password": senha_input.strip()
@@ -297,44 +201,27 @@ else:
 
                         resposta = requests.post(
                             SCRIPT_URL,
-                            json=payload
+                            json=payload,
+                            timeout=12
                         )
 
                         if resposta.status_code == 200:
-
                             resultado_servidor = resposta.json()
 
                             if resultado_servidor.get("status") == "success":
-
                                 st.session_state["usuario_logado"] = resultado_servidor
-
+                                st.success("Login realizado com sucesso!")
                                 st.rerun()
-
                             else:
-
-                                st.error(
-                                    resultado_servidor.get(
-                                        "message",
-                                        "Usuário ou senha inválidos"
-                                    )
-                                )
-
+                                st.error(resultado_servidor.get("message", "Usuário ou senha inválidos"))
                         else:
+                            st.error(f"Erro no servidor ({resposta.status_code})")
 
-                            st.error(
-                                f"Erro servidor ({resposta.status_code})"
-                            )
-
+                    except requests.exceptions.Timeout:
+                        st.error("⏳ Tempo de resposta esgotado. Tente novamente.")
                     except Exception as e:
-
-                        st.error(
-                            f"Erro no login: {e}"
-                        )
-
+                        st.error(f"Erro de conexão: {str(e)}")
             else:
-
-                st.warning(
-                    "Preencha usuário e senha"
-                )
+                st.warning("Preencha usuário e senha")
 
     st.caption("Desenvolvido por Comunicando Igrejas")
