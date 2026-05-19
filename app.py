@@ -2,157 +2,349 @@ import streamlit as st
 import requests
 from openai import OpenAI
 
-# Configuração inicial da página (Força a tela limpa e sem barra lateral)
+# ==========================================
+# CONFIGURAÇÃO DA PÁGINA
+# ==========================================
+
 st.set_page_config(
-    page_title="Social Media Content Master", 
-    layout="centered", 
+    page_title="Social Media Content Master",
+    layout="centered",
     initial_sidebar_state="collapsed"
 )
 
-# Estilização CSS para garantir que a barra lateral suma completamente em qualquer situação
+# Remove sidebar completamente
 st.markdown("""
     <style>
-        [data-testid="stSidebar"] {display: none !important;}
-        [data-testid="collapsedSidebarNoContent"] {display: none !important;}
+        [data-testid="stSidebar"] {
+            display: none !important;
+        }
+
+        [data-testid="collapsedSidebarNoContent"] {
+            display: none !important;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# 1. VERIFICAÇÃO DAS CHAVES NOS SECRETS DO STREAMLIT
+# ==========================================
+# VERIFICAÇÃO DOS SECRETS
+# ==========================================
+
 if "URL_PLANILHA_SCRIPT" in st.secrets:
     SCRIPT_URL = st.secrets["URL_PLANILHA_SCRIPT"]
 else:
-    st.error("⚠️ Erro: Chave 'URL_PLANILHA_SCRIPT' não encontrada nos Secrets do Streamlit.")
+    st.error("⚠️ Chave URL_PLANILHA_SCRIPT não encontrada.")
     st.stop()
 
 if "OPENAI_API_KEY" in st.secrets:
-    # Inicializa o cliente da OpenAI pegando a chave fixa e segura dos Secrets
-    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    client = OpenAI(
+        api_key=st.secrets["OPENAI_API_KEY"]
+    )
 else:
-    st.error("⚠️ Erro: Chave 'OPENAI_API_KEY' não encontrada nos Secrets do Streamlit.")
+    st.error("⚠️ Chave OPENAI_API_KEY não encontrada.")
     st.stop()
 
-# Inicializar as variáveis de sessão (gavetas de memória)
+# ==========================================
+# SESSION STATE
+# ==========================================
+
 if "usuario_logado" not in st.session_state:
     st.session_state["usuario_logado"] = None
+
 if "resultado_final" not in st.session_state:
     st.session_state["resultado_final"] = ""
 
-# --- CONTROLE DE FLUXO DE TELAS ---
+# ==========================================
+# FUNÇÃO DE GERAÇÃO COM RESPONSES API
+# ==========================================
+
+def gerar_conteudo(dados_usuario, tema_post):
+
+    dna = dados_usuario.get(
+        "dna",
+        "Escreva de forma moderna e envolvente"
+    )
+
+    nicho = dados_usuario.get(
+        "nicho",
+        "Marketing Digital"
+    )
+
+    nome_cliente = dados_usuario.get(
+        "nome_exibicao",
+        "Cliente"
+    )
+
+    # Campos futuros já preparados
+    tom = dados_usuario.get(
+        "tom",
+        "Profissional"
+    )
+
+    objetivo = dados_usuario.get(
+        "objetivo",
+        "Gerar engajamento"
+    )
+
+    publico = dados_usuario.get(
+        "publico",
+        "Público geral"
+    )
+
+    cta = dados_usuario.get(
+        "cta",
+        "Comente sua opinião."
+    )
+
+    # ==========================================
+    # PROMPT DO AGENTE
+    # ==========================================
+
+    system_prompt = f"""
+    Você é um especialista profissional em:
+    - copywriting
+    - marketing digital
+    - SEO para redes sociais
+    - criação de legendas virais
+
+    CLIENTE:
+    {nome_cliente}
+
+    NICHO:
+    {nicho}
+
+    DNA DE ESCRITA:
+    {dna}
+
+    TOM:
+    {tom}
+
+    OBJETIVO:
+    {objetivo}
+
+    PÚBLICO:
+    {publico}
+
+    CTA PADRÃO:
+    {cta}
+
+    SUA MISSÃO:
+    Criar legendas altamente profissionais para Instagram.
+
+    REGRAS:
+    - Criar conexão emocional
+    - Gerar retenção
+    - Gerar engajamento
+    - Adaptar a linguagem ao nicho
+    - Utilizar copy persuasiva
+    - Utilizar gatilhos mentais quando fizer sentido
+    - Finalizar com CTA forte
+    - Gerar de 15 a 20 hashtags estratégicas
+    - Misturar hashtags virais e nichadas
+    - Não usar hashtags genéricas demais
+    - Separar hashtags no final da legenda
+    """
+
+    user_prompt = f"""
+    Crie uma legenda completa para Instagram sobre:
+
+    {tema_post}
+    """
+
+    # ==========================================
+    # CHAMADA OPENAI - RESPONSES API
+    # ==========================================
+
+    resposta = client.responses.create(
+        model="gpt-5-mini",
+        instructions=system_prompt,
+        input=user_prompt
+    )
+
+    return resposta.output_text
+
+# ==========================================
+# ÁREA LOGADA
+# ==========================================
 
 if st.session_state["usuario_logado"] is not None:
-    # ==========================================
-    # 🚀 TELA PRINCIPAL (TELA ÚNICA INTEGRADA)
-    # ==========================================
+
     dados = st.session_state["usuario_logado"]
-    
-    # Exibe o Nome do Cliente ACIMA do título do sistema
-    st.write(f"✨ Cliente Ativo: **{dados.get('nome_exibicao', 'Varão')}**")
+
+    st.write(
+        f"✨ Cliente Ativo: **{dados.get('nome_exibicao', 'Cliente')}**"
+    )
+
     st.title("📸 Social Media Content Master")
-    
-    # Botão para Sair do Aplicativo
+
+    # ==========================================
+    # BOTÃO SAIR
+    # ==========================================
+
     if st.button("🚪 Sair do Aplicativo"):
+
         st.session_state["usuario_logado"] = None
         st.session_state["resultado_final"] = ""
+
         st.rerun()
-        
+
     st.divider()
-    
-    st.write(f"### Gerador de Conteúdo Profissional")
-    st.caption(f"Nicho configurado para este perfil: **{dados.get('nicho', 'Geral')}**")
-    
-    # Campo de entrada para o tema do post
+
+    st.write("### Gerador de Conteúdo Profissional")
+
+    st.caption(
+        f"Nicho configurado: **{dados.get('nicho', 'Geral')}**"
+    )
+
+    # ==========================================
+    # INPUT TEMA
+    # ==========================================
+
     tema_post = st.text_area(
-        "Sobre qual assunto ou tema você deseja criar o seu post hoje, irmão?", 
-        placeholder="Ex: Aviso sobre o culto de jovens deste sábado ou promoção de doces gourmet...",
+        "Sobre qual assunto você deseja criar conteúdo hoje?",
+        placeholder="Ex: culto de jovens, promoção de roupas, hamburguer artesanal...",
         key="input_tema_post"
     )
-    
-    if st.button("Gerar Conteúdo Completo ✨", key="btn_gerar_tudo"):
+
+    # ==========================================
+    # GERAR CONTEÚDO
+    # ==========================================
+
+    if st.button("Gerar Conteúdo Completo ✨"):
+
         if tema_post.strip():
-            with st.spinner("A OpenAI está redigindo sua legenda e selecionando as hashtags..."):
+
+            with st.spinner("A IA está criando seu conteúdo..."):
+
                 try:
-                    dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
-                    
-                    # Chamada única para o GPT criar o texto e as tags juntos de forma harmoniosa
-                    resposta = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {
-                                "role": "system", 
-                                "content": (
-                                    f"Você é um redator e especialista em SEO profissional. "
-                                    f"Use estritamente o seguinte estilo/DNA de escrita: {dna_do_chat}. "
-                                    f"Foque no nicho: {dados.get('nicho')}. "
-                                    f"Instrução de formato: Escreva a legenda completa para o Instagram e, logo ao final dela, "
-                                    f"adicione uma seleção de 15 a 20 hashtags estratégicas (virais e nichadas) separadas por espaços."
-                                )
-                            },
-                            {
-                                "role": "user", 
-                                "content": f"Crie uma legenda e hashtags para um post sobre: {tema_post}"
-                            }
-                        ]
+
+                    resultado = gerar_conteudo(
+                        dados,
+                        tema_post
                     )
-                    st.session_state["resultado_final"] = resposta.choices[0].message.content
+
+                    st.session_state["resultado_final"] = resultado
+
                 except Exception as e:
-                    st.error(f"Erro ao processar na OpenAI: {e}")
+
+                    st.error(
+                        f"Erro ao gerar conteúdo: {e}"
+                    )
+
         else:
-            st.warning("Por favor, digite o assunto do post antes de gerar.")
-            
+
+            st.warning(
+                "Digite um tema antes de gerar."
+            )
+
     st.divider()
-    
-    # Se já houver conteúdo gerado, exibe na caixa de texto para edição/cópia
+
+    # ==========================================
+    # RESULTADO
+    # ==========================================
+
     if st.session_state["resultado_final"]:
-        st.write("### 📝 Legenda e Hashtags Prontas")
-        st.caption("Você pode editar ou ajustar o texto diretamente na caixa abaixo antes de copiar:")
-        
-        # Caixa de texto editável com o conteúdo gerado
+
+        st.write("### 📝 Conteúdo Gerado")
+
+        st.caption(
+            "Você pode editar o conteúdo abaixo antes de copiar."
+        )
+
         conteudo_editado = st.text_area(
-            label="Conteúdo final do post",
+            label="Legenda final",
             value=st.session_state["resultado_final"],
             height=350,
             key="caixa_resultado_final"
         )
-        
-        # Atualiza a memória caso o usuário digite algo na caixa de texto
+
         st.session_state["resultado_final"] = conteudo_editado
-        st.success("Glória a Deus! Tudo pronto. Basta selecionar o texto acima e copiar para o seu Instagram.")
+
+        st.success(
+            "✅ Conteúdo gerado com sucesso."
+        )
+
+# ==========================================
+# ÁREA DE LOGIN
+# ==========================================
 
 else:
-    # ==========================================
-    # 🔑 TELA DE LOGIN (SÓ APARECE SE NÃO ESTIVER LOGADO)
-    # ==========================================
-    st.title("🔑 Social Media Content Master - Login")
-    
+
+    st.title("🔑 Social Media Content Master")
+
     with st.form("formulario_login"):
+
         usuario_input = st.text_input("Usuário")
-        senha_input = st.text_input("Senha", type="password")
-        botao_entrar = st.form_submit_button("Entrar no Sistema")
-        
+
+        senha_input = st.text_input(
+            "Senha",
+            type="password"
+        )
+
+        botao_entrar = st.form_submit_button(
+            "Entrar no Sistema"
+        )
+
         if botao_entrar:
+
             if usuario_input.strip() and senha_input.strip():
-                with st.spinner("Autenticando credenciais na base de dados..."):
+
+                with st.spinner(
+                    "Autenticando..."
+                ):
+
                     try:
+
                         payload = {
                             "username": usuario_input.strip(),
                             "password": senha_input.strip()
                         }
-                        resposta = requests.post(SCRIPT_URL, json=payload)
-                        
+
+                        resposta = requests.post(
+                            SCRIPT_URL,
+                            json=payload
+                        )
+
                         if resposta.status_code == 200:
-                            resultado_servidor = response_json = resposta.json()
-                            
+
+                            resultado_servidor = resposta.json()
+
                             if resultado_servidor.get("status") == "success":
+
                                 st.session_state["usuario_logado"] = resultado_servidor
-                                st.success("Bênção! Acesso liberado.")
+
+                                st.success(
+                                    "✅ Login realizado com sucesso."
+                                )
+
                                 st.rerun()
+
                             else:
-                                erro_msg = resultado_servidor.get("message", "Credenciais inválidas")
-                                st.error(f"❌ Erro: {erro_msg}")
+
+                                erro_msg = resultado_servidor.get(
+                                    "message",
+                                    "Credenciais inválidas"
+                                )
+
+                                st.error(
+                                    f"❌ {erro_msg}"
+                                )
+
                         else:
-                            st.error(f"Erro de comunicação com o servidor Google (Código: {resposta.status_code})")
+
+                            st.error(
+                                f"Erro servidor Google Sheets ({resposta.status_code})"
+                            )
+
                     except Exception as e:
-                        st.error(f"Erro ao processar login: {e}")
+
+                        st.error(
+                            f"Erro no login: {e}"
+                        )
+
             else:
-                st.warning("Por favor, preencha todos os campos de login.")
-                st.warning("Desenvolvido pr Comunicando Igrejas")
+
+                st.warning(
+                    "Preencha usuário e senha."
+                )
+
+    st.caption("Desenvolvido por Comunicando Igrejas")
