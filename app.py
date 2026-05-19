@@ -17,11 +17,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 1. VERIFICAÇÃO DO LINK DO SCRIPT DO GOOGLE
+# 1. VERIFICAÇÃO DAS CHAVES NOS SECRETS DO STREAMLIT
 if "URL_PLANILHA_SCRIPT" in st.secrets:
     SCRIPT_URL = st.secrets["URL_PLANILHA_SCRIPT"]
 else:
     st.error("⚠️ Erro: Chave 'URL_PLANILHA_SCRIPT' não encontrada nos Secrets do Streamlit.")
+    st.stop()
+
+if "OPENAI_API_KEY" in st.secrets:
+    # Inicializa o cliente da OpenAI pegando a chave fixa e segura dos Secrets
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+else:
+    st.error("⚠️ Erro: Chave 'OPENAI_API_KEY' não encontrada nos Secrets do Streamlit.")
     st.stop()
 
 # Inicializar as variáveis de sessão (gavetas de memória)
@@ -37,14 +44,6 @@ if st.session_state["usuario_logado"] is not None:
     # 🚀 TELA PRINCIPAL (APÓS LOGIN COM SUCESSO)
     # ==========================================
     dados = st.session_state["usuario_logado"]
-    
-    # Inicializa o cliente da OpenAI usando a chave vinda da planilha (Coluna F)
-    # Certifique-se de que a chave na planilha comece com "sk-..."
-    if dados.get("api_key_user"):
-        client = OpenAI(api_key=dados.get("api_key_user"))
-    else:
-        st.error("⚠️ Chave de API da OpenAI não encontrada para este usuário na planilha.")
-        st.stop()
     
     # Exibe o Nome do Cliente ACIMA do título do sistema
     st.write(f"✨ Cliente Ativo: **{dados.get('nome_exibicao', 'Varão')}**")
@@ -62,7 +61,7 @@ if st.session_state["usuario_logado"] is not None:
     janela_legenda, janela_arte = st.tabs(["📝 Criar Legenda", "🎨 Criar Arte"])
     
     # ------------------------------------------
-    # JANELA 1: CRIAÇÃO DE LEGENDA (OPENAI)
+    # JANELA 1: CRIAÇÃO DE LEGENDA (OPENAI VIA SECRETS)
     # ------------------------------------------
     with janela_legenda:
         st.write(f"### Gerador de Legendas Profissionais")
@@ -80,7 +79,7 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Escreva de forma engajadora")
                         
-                        # Chamada oficial do modelo gpt-4o-mini (rápido e econômico)
+                        # Chamada do modelo utilizando a estrutura segura
                         resposta = client.chat.completions.create(
                             model="gpt-4o-mini",
                             messages=[
@@ -105,7 +104,7 @@ if st.session_state["usuario_logado"] is not None:
             st.code(st.session_state["legenda_gerada"], language="text")
             
     # ------------------------------------------
-    # JANELA 2: CRIAÇÃO DA ARTE PRONTA (OPENAI DALL-E 3)
+    # JANELA 2: CRIAÇÃO DA ARTE PRONTA (DALL-E 3 VIA SECRETS)
     # ------------------------------------------
     with janela_arte:
         st.write("### Gerador de Imagens Integrado (Pronto para o Feed)")
@@ -122,7 +121,7 @@ if st.session_state["usuario_logado"] is not None:
                     try:
                         dna_do_chat = dados.get("dna", "Estilo moderno")
                         
-                        # Construção do prompt injetando a identidade de cores e formato
+                        # Injeção das regras de cores do seu grupo/marca
                         prompt_completo = (
                             f"Crie uma imagem de alta qualidade baseada no estilo: '{dna_do_chat}'. "
                             f"Ideia central: {id_arte}. "
@@ -130,18 +129,15 @@ if st.session_state["usuario_logado"] is not None:
                             f"Importante: Não adicione nenhum tipo de texto, letras, frases ou palavras escritas dentro da imagem."
                         )
                         
-                        # Chamada oficial do DALL-E 3 da OpenAI
                         resposta_imagem = client.images.generate(
                             model="dall-e-3",
                             prompt=prompt_completo,
-                            size="1024x1024",  # Força a proporção 1:1 perfeita para o Instagram
+                            size="1024x1024",  # Formato 1:1 exato para o feed do Instagram
                             quality="standard",
                             n=1,
                         )
                         
                         url_imagem = resposta_imagem.data[0].url
-                        
-                        # Baixa os bytes da imagem gerada pela URL para permitir o download no botão do Streamlit
                         img_bytes = requests.get(url_imagem).content
                         
                         st.success("Glória a Deus! Arte criada com sucesso:")
