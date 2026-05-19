@@ -135,6 +135,7 @@ def gerar_conteudo(dados_usuario, tema_post):
     - Gerar retenção
     - Gerar engajamento
     - Adaptar a linguagem ao nicho
+    - Criar a legenda com emojis relacionados ao tema
     - Utilizar copy persuasiva
     - Utilizar gatilhos mentais quando fizer sentido
     - Finalizar com CTA forte
